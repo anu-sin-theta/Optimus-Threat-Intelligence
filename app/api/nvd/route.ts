@@ -67,7 +67,7 @@ export async function GET(request: Request) {
               const cve = vuln.cve;
 
               // Get primary description in English
-              const description = cve.descriptions?.find(desc => desc.lang === 'en')?.value ||
+              const description = cve.descriptions?.find((desc: { lang: string; }) => desc.lang === 'en')?.value ||
                                 cve.descriptions?.[0]?.value ||
                                 'No description available';
 

@@ -4,6 +4,16 @@ import { DataCache } from '@/lib/data-cache';
 import fs from 'fs';
 import path from 'path';
 
+interface CisaKevVulnerability {
+  cveID: string;
+  vendorProject: string;
+  product: string;
+  vulnerabilityName: string;
+  dateAdded: string;
+  dueDate: string;
+  shortDescription?: string;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const forceUpdate = searchParams.get('forceUpdate') === 'true';
@@ -35,11 +45,18 @@ export async function GET(request: Request) {
 
       // Format and enrich the data
       const formattedData = {
-        vulnerabilities: kevData.vulnerabilities.map(vuln => ({
-          ...vuln,
-          dueDate: vuln.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days if not specified
-          dateAdded: vuln.dateAdded || new Date().toISOString()
-        })),
+        vulnerabilities: kevData.vulnerabilities.map((vuln: any) => {
+          const v: CisaKevVulnerability = {
+            cveID: vuln.cveID,
+            vendorProject: vuln.vendorProject,
+            product: vuln.product,
+            vulnerabilityName: vuln.vulnerabilityName,
+            dateAdded: vuln.dateAdded || new Date().toISOString(),
+            dueDate: vuln.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            shortDescription: vuln.shortDescription || ''
+          };
+          return v;
+        }),
         total: kevData.vulnerabilities.length,
         timestamp: new Date().toISOString()
       };
@@ -50,7 +67,7 @@ export async function GET(request: Request) {
       // Save as CSV for easier data handling
       const csvPath = path.join(process.cwd(), 'database', 'cisa-kev.csv');
       const csvContent = formattedData.vulnerabilities
-        .map(vuln => [
+        .map((vuln: CisaKevVulnerability) => [
           vuln.cveID,
           vuln.vendorProject,
           vuln.product,
@@ -71,14 +88,14 @@ export async function GET(request: Request) {
 
     const now = new Date();
     const stats = {
-      total: data.vulnerabilities.length,
-      dueSoon: data.vulnerabilities.filter((vuln: any) => {
+      total: (data.vulnerabilities as CisaKevVulnerability[]).length,
+      dueSoon: (data.vulnerabilities as CisaKevVulnerability[]).filter((vuln) => {
         const daysUntilDue = Math.ceil(
-          (new Date(vuln.dueDate) - now) / (1000 * 60 * 60 * 24)
+          (new Date(vuln.dueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
         );
         return daysUntilDue <= 7;
       }).length,
-      addedThisMonth: data.vulnerabilities.filter((vuln: any) => {
+      addedThisMonth: (data.vulnerabilities as CisaKevVulnerability[]).filter((vuln) => {
         const addedDate = new Date(vuln.dateAdded);
         return (
           addedDate.getMonth() === now.getMonth() &&
@@ -87,11 +104,11 @@ export async function GET(request: Request) {
       }).length,
     };
 
-    let filteredVulnerabilities = data.vulnerabilities;
+    let filteredVulnerabilities = data.vulnerabilities as CisaKevVulnerability[];
     if (due && due !== 'all') {
-      filteredVulnerabilities = filteredVulnerabilities.filter((vuln: any) => {
+      filteredVulnerabilities = filteredVulnerabilities.filter((vuln) => {
         const daysUntilDue = Math.ceil(
-          (new Date(vuln.dueDate) - new Date()) / (1000 * 60 * 60 * 24)
+          (new Date(vuln.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
         );
         if (due === 'urgent') return daysUntilDue <= 7;
         if (due === 'upcoming') return daysUntilDue > 7 && daysUntilDue <= 30;

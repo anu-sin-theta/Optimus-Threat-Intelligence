@@ -45,7 +45,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Search, Filter, Download, RotateCw } from "lucide-react"
+import { Search, Filter, RotateCw } from "lucide-react"
 import { intelligentSearch } from "@/lib/search"
 import { useDebounce } from "@/hooks/use-debounce"
 
@@ -215,15 +215,31 @@ export default function VulnerabilitiesTab() {
     setCweLoading(true);
     try {
       const response = await fetch(`/api/cwe/${cweId}`);
-      const data = await response.json();
-      if (response.ok) {
+      let data;
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch CWE details (status: ${response.status})`);
+      }
+
+      try {
+        data = await response.json();
+      } catch (error) {
+        console.error("Failed to parse CWE API response:", error);
+        throw new Error("Invalid response format from CWE API");
+      }
+
+      if (data.Weaknesses && data.Weaknesses.length > 0) {
         setCweDetails(data.Weaknesses[0]);
       } else {
-        throw new Error(data.error || 'Failed to fetch CWE details');
+        throw new Error("No weakness details found in the response");
       }
     } catch (error) {
       console.error("Error fetching CWE details:", error);
-      setCweDetails({ name: 'Error', description: error.message });
+      setCweDetails({
+        ID: cweId,
+        Name: 'Error',
+        Description: error.message
+      });
     } finally {
       setCweLoading(false);
     }
@@ -582,11 +598,16 @@ export default function VulnerabilitiesTab() {
       </AlertDialog>
 
       <Dialog open={isCweDialogOpen} onOpenChange={setIsCweDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>CWE Details: {selectedCwe}</DialogTitle>
+            <DialogTitle>
+              CWE Details: {cweDetails?.ID} - {cweDetails?.Name}
+            </DialogTitle>
             <DialogDescription>
-              A detailed description of the Common Weakness Enumeration.
+              <span className="font-semibold">Abstraction:</span> {cweDetails?.Abstraction} |
+              <span className="font-semibold">Structure:</span> {cweDetails?.Structure} |
+              <span className="font-semibold">Status:</span> {cweDetails?.Status} |
+              <span className="font-semibold">Likelihood of Exploit:</span> {cweDetails?.LikelihoodOfExploit}
             </DialogDescription>
           </DialogHeader>
           {cweLoading ? (
@@ -595,15 +616,234 @@ export default function VulnerabilitiesTab() {
               <span className="ml-2">Loading CWE details...</span>
             </div>
           ) : cweDetails ? (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold">{cweDetails.Name}</h3>
-                <p className="text-muted-foreground mt-1">{cweDetails.Description}</p>
-              </div>
-              {cweDetails.ExtendedDescription && (
+            <div className="space-y-6">
+              {cweDetails.Diagram && (
                 <div>
-                  <h4 className="font-semibold">Extended Description</h4>
-                  <p className="text-muted-foreground mt-1">{cweDetails.ExtendedDescription}</p>
+                  <img src={cweDetails.Diagram} alt="CWE Diagram" className="max-w-xs mb-2" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-lg font-semibold">Description</h3>
+                <p className="text-muted-foreground mt-1">{cweDetails.Description}</p>
+                {cweDetails.ExtendedDescription && (
+                  <p className="text-muted-foreground mt-2">{cweDetails.ExtendedDescription}</p>
+                )}
+              </div>
+              {cweDetails.RelatedWeaknesses?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Related Weaknesses</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.RelatedWeaknesses.map((rw, idx) => (
+                      <li key={idx}>
+                        <span className="font-mono">CWE-{rw.CweID}</span> ({rw.Nature}, View: {rw.ViewID}, Ordinal: {rw.Ordinal})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.WeaknessOrdinalities?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Weakness Ordinalities</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.WeaknessOrdinalities.map((wo, idx) => (
+                      <li key={idx}><b>{wo.Ordinality}:</b> {wo.Description}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.ApplicablePlatforms?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Applicable Platforms</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.ApplicablePlatforms.map((ap, idx) => (
+                      <li key={idx}>{ap.Type}: {ap.Name || ap.Class} ({ap.Prevalence})</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.AlternateTerms?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Alternate Terms</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.AlternateTerms.map((at, idx) => (
+                      <li key={idx}><b>{at.Term}:</b> {at.Description}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.ModesOfIntroduction?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Modes of Introduction</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.ModesOfIntroduction.map((mi, idx) => (
+                      <li key={idx}>{mi.Phase}{mi.Note ? ` (${mi.Note})` : ''}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.CommonConsequences?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Common Consequences</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.CommonConsequences.map((cc, idx) => (
+                      <li key={idx}>
+                        <b>Scope:</b> {cc.Scope?.join(', ')} | <b>Impact:</b> {cc.Impact?.join(', ')}
+                        {cc.Note && <div className="text-xs text-muted-foreground">{cc.Note}</div>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.DetectionMethods?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Detection Methods</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.DetectionMethods.map((dm, idx) => (
+                      <li key={idx}>
+                        <b>{dm.Method}</b>: {dm.Description}
+                        {dm.Effectiveness ? ` (Effectiveness: ${dm.Effectiveness})` : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.PotentialMitigations?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Potential Mitigations</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.PotentialMitigations.map((pm, idx) => (
+                      <li key={idx}>
+                        {pm.MitigationID && <span className="font-mono">{pm.MitigationID}</span>} <b>Phase:</b> {pm.Phase?.join(', ')}
+                        {pm.Strategy && <span> | <b>Strategy:</b> {pm.Strategy}</span>}
+                        <div>{pm.Description}</div>
+                        {pm.Effectiveness && <div className="text-xs text-muted-foreground">Effectiveness: {pm.Effectiveness}</div>}
+                        {pm.EffectivenessNotes && <div className="text-xs text-muted-foreground">Notes: {pm.EffectivenessNotes}</div>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.DemonstrativeExamples?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Demonstrative Examples</h3>
+                  {cweDetails.DemonstrativeExamples.map((ex, idx) => (
+                    <div key={idx} className="mb-4">
+                      {ex.Entries?.map((entry, eidx) => (
+                        <div key={eidx} className="mb-2">
+                          {entry.IntroText && <div className="font-medium">{entry.IntroText}</div>}
+                          {entry.BodyText && <div className="text-sm">{entry.BodyText}</div>}
+                          {entry.ExampleCode && (
+                            <pre className="bg-muted p-2 rounded text-xs overflow-x-auto mb-1"><code>{entry.ExampleCode}</code></pre>
+                          )}
+                          {entry.Nature && <span className="badge badge-outline mr-2">{entry.Nature}</span>}
+                          {entry.Language && <span className="badge badge-outline mr-2">{entry.Language}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {cweDetails.ObservedExamples?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Observed Examples (CVEs)</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.ObservedExamples.map((oe, idx) => (
+                      <li key={idx}>
+                        <a href={oe.Link} target="_blank" rel="noopener noreferrer" className="text-primary underline">{oe.Reference}</a>: {oe.Description}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.FunctionalAreas?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Functional Areas</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.FunctionalAreas.map((fa, idx) => (
+                      <li key={idx}>{fa}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.AffectedResources?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Affected Resources</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.AffectedResources.map((ar, idx) => (
+                      <li key={idx}>{ar}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.TaxonomyMappings?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Taxonomy Mappings</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.TaxonomyMappings.map((tm, idx) => (
+                      <li key={idx}>{tm.TaxonomyName}: {tm.EntryName || tm.EntryID}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.RelatedAttackPatterns?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Related Attack Patterns</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.RelatedAttackPatterns.map((rap, idx) => (
+                      <li key={idx}>{rap}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.References?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">References</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.References.map((ref, idx) => (
+                      <li key={idx}>
+                        {ref.URL ? (
+                          <a href={ref.URL} target="_blank" rel="noopener noreferrer" className="text-primary underline">{ref.Title || ref.ExternalReferenceID}</a>
+                        ) : (
+                          <span>{ref.Title || ref.ExternalReferenceID}</span>
+                        )}
+                        {ref.Authors && <span> by {ref.Authors.join(', ')}</span>}
+                        {ref.PublicationYear && <span> ({ref.PublicationYear})</span>}
+                        {ref.Section && <span> - {ref.Section}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.MappingNotes && (
+                <div>
+                  <h3 className="font-semibold">Mapping Notes</h3>
+                  <pre className="bg-muted p-2 rounded text-xs overflow-x-auto mb-1"><code>{JSON.stringify(cweDetails.MappingNotes, null, 2)}</code></pre>
+                </div>
+              )}
+              {cweDetails.Notes?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Notes</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.Notes.map((note, idx) => (
+                      <li key={idx}><b>{note.Type}:</b> {note.Note}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cweDetails.ContentHistory?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold">Content History</h3>
+                  <ul className="list-disc ml-6">
+                    {cweDetails.ContentHistory.map((ch, idx) => (
+                      <li key={idx}>
+                        <b>{ch.Type}:</b> {ch.SubmissionName || ch.ModificationName || ch.ContributionName || ch.PreviousEntryName} ({ch.SubmissionDate || ch.ModificationDate || ch.ContributionDate || ch.Date})
+                        {ch.ModificationComment && <span> - {ch.ModificationComment}</span>}
+                        {ch.ContributionComment && <span> - {ch.ContributionComment}</span>}
+                        {ch.SubmissionVersion && <span> v{ch.SubmissionVersion}</span>}
+                        {ch.ModificationVersion && <span> v{ch.ModificationVersion}</span>}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
