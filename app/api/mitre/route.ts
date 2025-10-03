@@ -44,11 +44,11 @@ async function fetchMitreData(): Promise<MitreTechnique[]> {
       .filter((obj: any) => obj.type === 'attack-pattern')
       .forEach((technique: any) => {
         const tacticRefs = technique.kill_chain_phases?.map((phase: any) => phase.phase_name) || [];
-        const tacticNames = tacticRefs.map((ref: string) => tactics.get(ref)).filter(Boolean);
+        const tacticNames = [...new Set(tacticRefs.map((ref: string) => tactics.get(ref)).filter(Boolean))];
 
         tacticNames.forEach((tacticName: string) => {
           techniques.push({
-            id: technique.external_references?.[0]?.external_id || 'Unknown',
+            id: `${technique.external_references?.[0]?.external_id}-${tacticName}`,
             name: technique.name || 'Unknown',
             description: technique.description || 'No description available',
             tactic: tacticName,

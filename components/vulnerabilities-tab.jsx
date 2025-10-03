@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -45,11 +46,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { Search, Filter, RotateCw } from "lucide-react"
+import { Search, Filter, RotateCw, X } from "lucide-react"
 import { intelligentSearch } from "@/lib/search"
 import { useDebounce } from "@/hooks/use-debounce"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 export default function VulnerabilitiesTab() {
+  const router = useRouter()
   const [vulnerabilities, setVulnerabilities] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedVuln, setSelectedVuln] = useState(null)
@@ -205,8 +210,7 @@ export default function VulnerabilitiesTab() {
   }, [debouncedSearchQuery])
 
   const handleViewDetails = (vuln) => {
-    setSelectedVuln(vuln)
-    setIsDetailsOpen(true)
+    router.push(`/nvd/${vuln.id}`)
   }
 
   const handleCweClick = async (cweId) => {
@@ -437,143 +441,6 @@ export default function VulnerabilitiesTab() {
         </CardContent>
       </Card>
 
-      {/* Details Modal */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          {selectedVuln && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <Badge
-                    variant={
-                      selectedVuln.severity === "CRITICAL"
-                        ? "destructive"
-                        : selectedVuln.severity === "HIGH"
-                        ? "default"
-                        : "secondary"
-                    }
-                  >
-                    {selectedVuln.severity}
-                  </Badge>
-                  {selectedVuln.id}
-                  <span className="text-lg font-bold text-primary">{selectedVuln.score}</span>
-                </DialogTitle>
-                <DialogDescription>
-                  Published: {selectedVuln.published} | Last Modified: {selectedVuln.modified}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Description</h3>
-                  <p className="text-muted-foreground">{selectedVuln.description}</p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Affected Product</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Vendor</p>
-                      <p className="font-medium">{selectedVuln.vendor}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Product</p>
-                      <p className="font-medium">{selectedVuln.product}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CVSS Metrics */}
-                {selectedVuln.metrics?.cvssMetricV31 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">CVSS Details</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      {selectedVuln.metrics.cvssMetricV31.map((metric, idx) => (
-                        <div key={idx} className="space-y-2">
-                          <div>
-                            <p className="text-muted-foreground">Attack Vector</p>
-                            <p className="font-medium">{metric.cvssData.attackVector}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Attack Complexity</p>
-                            <p className="font-medium">{metric.cvssData.attackComplexity}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Privileges Required</p>
-                            <p className="font-medium">{metric.cvssData.privilegesRequired}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">User Interaction</p>
-                            <p className="font-medium">{metric.cvssData.userInteraction}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Scope</p>
-                            <p className="font-medium">{metric.cvssData.scope}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <p className="text-sm text-muted-foreground">Vector</p>
-                      <p className="font-mono text-xs bg-muted p-2 rounded-md">
-                        {selectedVuln.metrics.cvssMetricV31[0].cvssData.vectorString}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-
-                {selectedVuln.weaknesses.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Weaknesses</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedVuln.weaknesses.map((weakness, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCweClick(weakness.description?.[0]?.value)}
-                        >
-                          {weakness.description?.[0]?.value || weakness}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {selectedVuln.references.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">References</h3>
-                    <div className="space-y-2">
-                      {selectedVuln.references.map((ref, idx) => (
-                        <div key={idx}>
-                          <a
-                            href={ref.url || ref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {ref.url || ref}
-                          </a>
-                          {ref.tags && (
-                            <div className="flex gap-2 mt-1">
-                              {ref.tags.map((tag, tagIdx) => (
-                                <Badge key={tagIdx} variant="outline">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={isNotFoundDialogOpen} onOpenChange={setIsNotFoundDialogOpen}>
         <AlertDialogContent>
@@ -598,258 +465,463 @@ export default function VulnerabilitiesTab() {
       </AlertDialog>
 
       <Dialog open={isCweDialogOpen} onOpenChange={setIsCweDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              CWE Details: {cweDetails?.ID} - {cweDetails?.Name}
-            </DialogTitle>
-            <DialogDescription>
-              <span className="font-semibold">Abstraction:</span> {cweDetails?.Abstraction} |
-              <span className="font-semibold">Structure:</span> {cweDetails?.Structure} |
-              <span className="font-semibold">Status:</span> {cweDetails?.Status} |
-              <span className="font-semibold">Likelihood of Exploit:</span> {cweDetails?.LikelihoodOfExploit}
-            </DialogDescription>
-          </DialogHeader>
-          {cweLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <RotateCw className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Loading CWE details...</span>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 gap-0">
+          <div className="sticky top-0 z-50 flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-4 border-b">
+            <div>
+              <DialogTitle className="text-xl">
+                CWE-{cweDetails?.ID}: {cweDetails?.Name}
+              </DialogTitle>
+              <DialogDescription className="flex gap-2 text-sm mt-1">
+                <Badge variant="outline">{cweDetails?.Abstraction}</Badge>
+                <Badge variant="outline">{cweDetails?.Structure}</Badge>
+                <Badge variant="outline">{cweDetails?.Status}</Badge>
+                <Badge variant={cweDetails?.LikelihoodOfExploit === "High" ? "destructive" :
+                              cweDetails?.LikelihoodOfExploit === "Medium" ? "default" : "secondary"}>
+                  {cweDetails?.LikelihoodOfExploit} Likelihood
+                </Badge>
+              </DialogDescription>
             </div>
-          ) : cweDetails ? (
-            <div className="space-y-6">
-              {cweDetails.Diagram && (
-                <div>
-                  <img src={cweDetails.Diagram} alt="CWE Diagram" className="max-w-xs mb-2" />
-                </div>
-              )}
-              <div>
-                <h3 className="text-lg font-semibold">Description</h3>
-                <p className="text-muted-foreground mt-1">{cweDetails.Description}</p>
-                {cweDetails.ExtendedDescription && (
-                  <p className="text-muted-foreground mt-2">{cweDetails.ExtendedDescription}</p>
-                )}
+            <Button
+              variant="ghost"
+              className="h-6 w-6 p-0 rounded-md"
+              onClick={() => setIsCweDialogOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <ScrollArea className="h-full max-h-[calc(95vh-80px)] p-6">
+            {cweLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <RotateCw className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Loading CWE details...</span>
               </div>
-              {cweDetails.RelatedWeaknesses?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Related Weaknesses</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.RelatedWeaknesses.map((rw, idx) => (
-                      <li key={idx}>
-                        <span className="font-mono">CWE-{rw.CweID}</span> ({rw.Nature}, View: {rw.ViewID}, Ordinal: {rw.Ordinal})
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.WeaknessOrdinalities?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Weakness Ordinalities</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.WeaknessOrdinalities.map((wo, idx) => (
-                      <li key={idx}><b>{wo.Ordinality}:</b> {wo.Description}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.ApplicablePlatforms?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Applicable Platforms</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.ApplicablePlatforms.map((ap, idx) => (
-                      <li key={idx}>{ap.Type}: {ap.Name || ap.Class} ({ap.Prevalence})</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.AlternateTerms?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Alternate Terms</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.AlternateTerms.map((at, idx) => (
-                      <li key={idx}><b>{at.Term}:</b> {at.Description}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.ModesOfIntroduction?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Modes of Introduction</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.ModesOfIntroduction.map((mi, idx) => (
-                      <li key={idx}>{mi.Phase}{mi.Note ? ` (${mi.Note})` : ''}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.CommonConsequences?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Common Consequences</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.CommonConsequences.map((cc, idx) => (
-                      <li key={idx}>
-                        <b>Scope:</b> {cc.Scope?.join(', ')} | <b>Impact:</b> {cc.Impact?.join(', ')}
-                        {cc.Note && <div className="text-xs text-muted-foreground">{cc.Note}</div>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.DetectionMethods?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Detection Methods</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.DetectionMethods.map((dm, idx) => (
-                      <li key={idx}>
-                        <b>{dm.Method}</b>: {dm.Description}
-                        {dm.Effectiveness ? ` (Effectiveness: ${dm.Effectiveness})` : null}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.PotentialMitigations?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Potential Mitigations</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.PotentialMitigations.map((pm, idx) => (
-                      <li key={idx}>
-                        {pm.MitigationID && <span className="font-mono">{pm.MitigationID}</span>} <b>Phase:</b> {pm.Phase?.join(', ')}
-                        {pm.Strategy && <span> | <b>Strategy:</b> {pm.Strategy}</span>}
-                        <div>{pm.Description}</div>
-                        {pm.Effectiveness && <div className="text-xs text-muted-foreground">Effectiveness: {pm.Effectiveness}</div>}
-                        {pm.EffectivenessNotes && <div className="text-xs text-muted-foreground">Notes: {pm.EffectivenessNotes}</div>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.DemonstrativeExamples?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Demonstrative Examples</h3>
-                  {cweDetails.DemonstrativeExamples.map((ex, idx) => (
-                    <div key={idx} className="mb-4">
-                      {ex.Entries?.map((entry, eidx) => (
-                        <div key={eidx} className="mb-2">
-                          {entry.IntroText && <div className="font-medium">{entry.IntroText}</div>}
-                          {entry.BodyText && <div className="text-sm">{entry.BodyText}</div>}
-                          {entry.ExampleCode && (
-                            <pre className="bg-muted p-2 rounded text-xs overflow-x-auto mb-1"><code>{entry.ExampleCode}</code></pre>
+            ) : cweDetails ? (
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="w-full justify-start bg-muted/50 p-0 h-12">
+                  <TabsTrigger value="overview" className="data-[state=active]:bg-background rounded-none h-12">Overview</TabsTrigger>
+                  <TabsTrigger value="technical" className="data-[state=active]:bg-background rounded-none h-12">Technical Details</TabsTrigger>
+                  <TabsTrigger value="detection" className="data-[state=active]:bg-background rounded-none h-12">Detection & Mitigation</TabsTrigger>
+                  <TabsTrigger value="examples" className="data-[state=active]:bg-background rounded-none h-12">Examples & References</TabsTrigger>
+                  <TabsTrigger value="metadata" className="data-[state=active]:bg-background rounded-none h-12">Metadata</TabsTrigger>
+                </TabsList>
+
+                <div className="mt-6 space-y-6">
+                  <TabsContent value="overview" className="m-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Description</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground">{cweDetails.Description}</p>
+                          {cweDetails.ExtendedDescription && (
+                            <Collapsible className="mt-4">
+                              <CollapsibleTrigger asChild>
+                                <Button variant="ghost" className="flex items-center gap-2">
+                                  Extended Description
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <p className="text-muted-foreground mt-2">{cweDetails.ExtendedDescription}</p>
+                              </CollapsibleContent>
+                            </Collapsible>
                           )}
-                          {entry.Nature && <span className="badge badge-outline mr-2">{entry.Nature}</span>}
-                          {entry.Language && <span className="badge badge-outline mr-2">{entry.Language}</span>}
-                        </div>
-                      ))}
+                        </CardContent>
+                      </Card>
+
+                      {cweDetails.CommonConsequences?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Common Consequences</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {cweDetails.CommonConsequences.map((cc, idx) => (
+                                <div key={idx} className="p-4 rounded-lg border bg-muted/50">
+                                  <div className="flex gap-2 mb-2">
+                                    {cc.Scope?.map((scope, i) => (
+                                      <Badge key={i} variant="secondary">{scope}</Badge>
+                                    ))}
+                                  </div>
+                                  <div className="flex gap-2 mb-2">
+                                    {cc.Impact?.map((impact, i) => (
+                                      <Badge key={i} variant="outline">{impact}</Badge>
+                                    ))}
+                                  </div>
+                                  {cc.Note && (
+                                    <p className="text-sm text-muted-foreground mt-2">{cc.Note}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.ApplicablePlatforms?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Applicable Platforms</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                              {cweDetails.ApplicablePlatforms.map((ap, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Badge variant="outline">{ap.Type}</Badge>
+                                  <span>{ap.Name || ap.Class}</span>
+                                  <Badge variant="secondary">{ap.Prevalence}</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.AlternateTerms?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Alternate Terms</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {cweDetails.AlternateTerms.map((at, idx) => (
+                                <Collapsible key={idx}>
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="flex items-center gap-2 w-full justify-start">
+                                      {at.Term}
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <p className="text-sm text-muted-foreground mt-2">{at.Description}</p>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
-                  ))}
+                  </TabsContent>
+
+                  <TabsContent value="technical" className="m-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {cweDetails.RelatedWeaknesses?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Related Weaknesses</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {cweDetails.RelatedWeaknesses.map((rw, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/50">
+                                  <Badge variant="default" className="font-mono">CWE-{rw.CweID}</Badge>
+                                  <Badge variant="outline">{rw.Nature}</Badge>
+                                  {rw.Ordinal && <Badge variant="secondary">{rw.Ordinal}</Badge>}
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.WeaknessOrdinalities?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Weakness Ordinalities</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {cweDetails.WeaknessOrdinalities.map((wo, idx) => (
+                                <div key={idx} className="p-4 rounded-lg border bg-muted/50">
+                                  <Badge variant="default" className="mb-2">{wo.Ordinality}</Badge>
+                                  <p className="text-sm text-muted-foreground">{wo.Description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.ModesOfIntroduction?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Modes of Introduction</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {cweDetails.ModesOfIntroduction.map((mi, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/50">
+                                  <Badge variant="default">{mi.Phase}</Badge>
+                                  {mi.Note && <p className="text-sm text-muted-foreground">{mi.Note}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="detection" className="m-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {cweDetails.DetectionMethods?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Detection Methods</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {cweDetails.DetectionMethods.map((dm, idx) => (
+                                <Collapsible key={idx}>
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="flex items-center justify-between w-full">
+                                      <span>{dm.Method}</span>
+                                      {dm.Effectiveness && (
+                                        <Badge variant={
+                                          dm.Effectiveness.includes("High") ? "default" :
+                                          dm.Effectiveness.includes("SOAR") ? "secondary" : "outline"
+                                        }>
+                                          {dm.Effectiveness}
+                                        </Badge>
+                                      )}
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{dm.Description}</p>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.PotentialMitigations?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Potential Mitigations</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {cweDetails.PotentialMitigations.map((pm, idx) => (
+                                <Collapsible key={idx}>
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="flex items-center gap-2 w-full justify-start">
+                                      {pm.Phase?.join(", ")}
+                                      {pm.Strategy && <Badge variant="outline">{pm.Strategy}</Badge>}
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="space-y-2">
+                                    <p className="text-sm text-muted-foreground mt-2">{pm.Description}</p>
+                                    {pm.Effectiveness && (
+                                      <Badge variant="secondary">Effectiveness: {pm.Effectiveness}</Badge>
+                                    )}
+                                    {pm.EffectivenessNotes && (
+                                      <p className="text-xs text-muted-foreground">{pm.EffectivenessNotes}</p>
+                                    )}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="examples" className="m-0">
+                    <div className="grid grid-cols-1 gap-6">
+                      {cweDetails.DemonstrativeExamples?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Demonstrative Examples</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-6">
+                              {cweDetails.DemonstrativeExamples.map((ex, idx) => (
+                                <Collapsible key={idx}>
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="flex items-center gap-2 w-full justify-start">
+                                      Example {idx + 1}
+                                      {ex.ID && <Badge variant="outline">{ex.ID}</Badge>}
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="mt-4">
+                                    {ex.Entries?.map((entry, eidx) => (
+                                      <div key={eidx} className="mb-4">
+                                        {entry.IntroText && (
+                                          <p className="font-medium mb-2">{entry.IntroText}</p>
+                                        )}
+                                        {entry.BodyText && (
+                                          <p className="text-sm text-muted-foreground mb-2">{entry.BodyText}</p>
+                                        )}
+                                        {entry.ExampleCode && (
+                                          <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto mb-2">
+                                            <div className="flex justify-between items-center mb-2">
+                                              {entry.Nature && <Badge variant="outline">{entry.Nature}</Badge>}
+                                              {entry.Language && <Badge variant="secondary">{entry.Language}</Badge>}
+                                            </div>
+                                            <code>{entry.ExampleCode}</code>
+                                          </pre>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.ObservedExamples?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Observed Examples (CVEs)</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {cweDetails.ObservedExamples.map((oe, idx) => (
+                                <div key={idx} className="p-4 rounded-lg border bg-muted/50">
+                                  <a
+                                    href={oe.Link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline font-medium"
+                                  >
+                                    {oe.Reference}
+                                  </a>
+                                  <p className="text-sm text-muted-foreground mt-2">{oe.Description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.References?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>References</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {cweDetails.References.map((ref, idx) => (
+                                <div key={idx} className="p-4 rounded-lg border bg-muted/50">
+                                  {ref.URL ? (
+                                    <a
+                                      href={ref.URL}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:underline font-medium"
+                                    >
+                                      {ref.Title || ref.ExternalReferenceID}
+                                    </a>
+                                  ) : (
+                                    <span className="font-medium">{ref.Title || ref.ExternalReferenceID}</span>
+                                  )}
+                                  <div className="text-sm text-muted-foreground mt-2">
+                                    {ref.Authors && <span>by {ref.Authors.join(', ')}</span>}
+                                    {ref.PublicationYear && <span> ({ref.PublicationYear})</span>}
+                                    {ref.Section && <span> - {ref.Section}</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="metadata" className="m-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {cweDetails.FunctionalAreas?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Functional Areas</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {cweDetails.FunctionalAreas.map((fa, idx) => (
+                                <Badge key={idx} variant="outline">{fa}</Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.AffectedResources?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Affected Resources</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                              {cweDetails.AffectedResources.map((ar, idx) => (
+                                <Badge key={idx} variant="outline">{ar}</Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.TaxonomyMappings?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Taxonomy Mappings</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {cweDetails.TaxonomyMappings.map((tm, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Badge variant="default">{tm.TaxonomyName}</Badge>
+                                  <span>{tm.EntryName || tm.EntryID}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {cweDetails.ContentHistory?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Content History</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {cweDetails.ContentHistory.map((ch, idx) => (
+                                <Collapsible key={idx}>
+                                  <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="flex items-center gap-2 w-full justify-start">
+                                      <Badge variant="outline">{ch.Type}</Badge>
+                                      <span>{ch.SubmissionDate || ch.ModificationDate || ch.ContributionDate || ch.Date}</span>
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="space-y-2 mt-2 text-sm text-muted-foreground">
+                                    {ch.ModificationComment && <p>{ch.ModificationComment}</p>}
+                                    {ch.ContributionComment && <p>{ch.ContributionComment}</p>}
+                                    {ch.SubmissionVersion && <Badge variant="secondary">v{ch.SubmissionVersion}</Badge>}
+                                    {ch.ModificationVersion && <Badge variant="secondary">v{ch.ModificationVersion}</Badge>}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
                 </div>
-              )}
-              {cweDetails.ObservedExamples?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Observed Examples (CVEs)</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.ObservedExamples.map((oe, idx) => (
-                      <li key={idx}>
-                        <a href={oe.Link} target="_blank" rel="noopener noreferrer" className="text-primary underline">{oe.Reference}</a>: {oe.Description}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.FunctionalAreas?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Functional Areas</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.FunctionalAreas.map((fa, idx) => (
-                      <li key={idx}>{fa}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.AffectedResources?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Affected Resources</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.AffectedResources.map((ar, idx) => (
-                      <li key={idx}>{ar}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.TaxonomyMappings?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Taxonomy Mappings</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.TaxonomyMappings.map((tm, idx) => (
-                      <li key={idx}>{tm.TaxonomyName}: {tm.EntryName || tm.EntryID}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.RelatedAttackPatterns?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Related Attack Patterns</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.RelatedAttackPatterns.map((rap, idx) => (
-                      <li key={idx}>{rap}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.References?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">References</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.References.map((ref, idx) => (
-                      <li key={idx}>
-                        {ref.URL ? (
-                          <a href={ref.URL} target="_blank" rel="noopener noreferrer" className="text-primary underline">{ref.Title || ref.ExternalReferenceID}</a>
-                        ) : (
-                          <span>{ref.Title || ref.ExternalReferenceID}</span>
-                        )}
-                        {ref.Authors && <span> by {ref.Authors.join(', ')}</span>}
-                        {ref.PublicationYear && <span> ({ref.PublicationYear})</span>}
-                        {ref.Section && <span> - {ref.Section}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.MappingNotes && (
-                <div>
-                  <h3 className="font-semibold">Mapping Notes</h3>
-                  <pre className="bg-muted p-2 rounded text-xs overflow-x-auto mb-1"><code>{JSON.stringify(cweDetails.MappingNotes, null, 2)}</code></pre>
-                </div>
-              )}
-              {cweDetails.Notes?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Notes</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.Notes.map((note, idx) => (
-                      <li key={idx}><b>{note.Type}:</b> {note.Note}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {cweDetails.ContentHistory?.length > 0 && (
-                <div>
-                  <h3 className="font-semibold">Content History</h3>
-                  <ul className="list-disc ml-6">
-                    {cweDetails.ContentHistory.map((ch, idx) => (
-                      <li key={idx}>
-                        <b>{ch.Type}:</b> {ch.SubmissionName || ch.ModificationName || ch.ContributionName || ch.PreviousEntryName} ({ch.SubmissionDate || ch.ModificationDate || ch.ContributionDate || ch.Date})
-                        {ch.ModificationComment && <span> - {ch.ModificationComment}</span>}
-                        {ch.ContributionComment && <span> - {ch.ContributionComment}</span>}
-                        {ch.SubmissionVersion && <span> v{ch.SubmissionVersion}</span>}
-                        {ch.ModificationVersion && <span> v{ch.ModificationVersion}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p>No details found for {selectedCwe}.</p>
-          )}
+              </Tabs>
+            ) : (
+              <div className="text-center text-muted-foreground">
+                <p>No details found for {selectedCwe}.</p>
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

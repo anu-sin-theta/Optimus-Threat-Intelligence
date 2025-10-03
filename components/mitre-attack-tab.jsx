@@ -16,67 +16,80 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 50;
+
 export default function MitreAttackTab() {
-  const [attackData, setAttackData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
-  const [selectedTechnique, setSelectedTechnique] = useState(null)
-  const debouncedSearchQuery = useDebounce(searchQuery, 500)
+  const [attackData, setAttackData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedTechnique, setSelectedTechnique] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const fetchAttackData = async (forceUpdate = false) => {
     try {
-      setLoading(true)
+      setLoading(true);
       const url = forceUpdate ?
         '/api/mitre?forceUpdate=true' :
         '/api/mitre';
-      const response = await fetch(url)
-      const data = await response.json()
-      setAttackData(data.techniques || [])
+      const response = await fetch(url);
+      const data = await response.json();
+      setAttackData(data.techniques || []);
     } catch (error) {
-      console.error("Error fetching MITRE ATT&CK data:", error)
+      console.error("Error fetching MITRE ATT&CK data:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAttackData()
-  }, [])
+    fetchAttackData();
+  }, []);
 
   useEffect(() => {
     const performSearch = async () => {
       if (!debouncedSearchQuery) {
-        fetchAttackData()
-        return
+        fetchAttackData();
+        return;
       }
 
-      setIsSearching(true)
+      setIsSearching(true);
       try {
-        const results = await intelligentSearch(debouncedSearchQuery, ['mitre'], false)
-        const mitreResults = results.find(r => r.source === 'mitre')
+        const results = await intelligentSearch(debouncedSearchQuery, ['mitre'], false);
+        const mitreResults = results.find(r => r.source === 'mitre');
         if (mitreResults?.data) {
-          setAttackData(mitreResults.data)
+          setAttackData(mitreResults.data);
         } else {
-          const updatedResults = await intelligentSearch(debouncedSearchQuery, ['mitre'], true)
-          const updatedMitreResults = updatedResults.find(r => r.source === 'mitre')
-          setAttackData(updatedMitreResults?.data || [])
+          const updatedResults = await intelligentSearch(debouncedSearchQuery, ['mitre'], true);
+          const updatedMitreResults = updatedResults.find(r => r.source === 'mitre');
+          setAttackData(updatedMitreResults?.data || []);
         }
       } catch (error) {
-        console.error('Error performing search:', error)
+        console.error('Error performing search:', error);
       } finally {
-        setIsSearching(false)
+        setIsSearching(false);
       }
-    }
+    };
 
-    performSearch()
-  }, [debouncedSearchQuery])
+    performSearch();
+  }, [debouncedSearchQuery]);
 
   const handleViewDetails = (technique) => {
-    setSelectedTechnique(technique)
-    setIsDetailsOpen(true)
-  }
+    setSelectedTechnique(technique);
+    setIsDetailsOpen(true);
+  };
+
+  const totalPages = Math.ceil(attackData.length / ITEMS_PER_PAGE);
+  const paginatedData = attackData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  };
 
   return (
     <div className="space-y-6">
@@ -156,7 +169,7 @@ export default function MitreAttackTab() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {attackData.map((technique) => (
+          {paginatedData.map((technique) => (
             <Card
               key={technique.id}
               className="bg-card border-border hover:bg-secondary/50 transition-colors cursor-pointer"
@@ -165,7 +178,7 @@ export default function MitreAttackTab() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <Badge>{technique.tactic}</Badge>
-                  <span className="text-sm text-muted-foreground">{technique.id}</span>
+                  <span className="text-sm text-muted-foreground">{technique.id.split('-')[0]}</span>
                 </div>
                 <CardTitle className="text-lg">{technique.name}</CardTitle>
               </CardHeader>
@@ -183,6 +196,39 @@ export default function MitreAttackTab() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mt-6">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                />
+              </PaginationItem>
+
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i + 1}>
+                  <PaginationLink
+                    onClick={() => handlePageChange(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 

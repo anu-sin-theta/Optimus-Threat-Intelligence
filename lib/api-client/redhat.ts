@@ -18,13 +18,12 @@ interface RedHatCVEResponse {
 }
 
 interface RedHatAPIResponse {
+  name?: string;
   threat_severity?: string;
-  severity?: string;
-  package_state?: Array<{ package_name: string }>;
-  affected_packages?: string[];
-  resource_url?: string;
-  details?: string[];
+  public_date?: string;
   bugzilla?: {
+    id?: string;
+    url?: string;
     description?: string;
   };
   cvss3?: {
@@ -32,6 +31,10 @@ interface RedHatAPIResponse {
     cvss3_scoring_vector: string;
     status: string;
   };
+  affected_release?: Array<{ product_name: string, advisory: string }>;
+  package_state?: Array<{ package_name: string }>;
+  resource_url?: string;
+  details?: string[];
 }
 
 export class RedHatSecurityClient {
@@ -54,7 +57,10 @@ export class RedHatSecurityClient {
     return `RHSA-${year}:${sequence}`;
   }
 
-  async getCVEDetails(cveId: string): Promise<RedHatCVEResponse> {
+  async getCVEDetails(cveId: string): Promise<RedHatCVEResponse | null> {
+    if (typeof cveId !== 'string' || !cveId) {
+      return null;
+    }
     // Normalize CVE ID format
     const normalizedCveId = cveId.toUpperCase().trim().replace(/^CVE-/, '');
     const url = `${API_CONFIG.redhatBase}/CVE-${normalizedCveId}`;
@@ -81,20 +87,15 @@ export class RedHatSecurityClient {
 
   private formatResponse(cveId: string, data: RedHatAPIResponse): RedHatCVEResponse {
     return {
-      id: this.generateAdvisoryId(),
+      id: data.name || this.generateAdvisoryId(),
       cve_id: cveId,
-      severity: data.threat_severity || data.severity || 'Unknown',
+      severity: data.threat_severity || 'Unknown',
       title: data.bugzilla?.description || `Security Update for ${cveId}`,
+      published: data.public_date,
       cvss3: data.cvss3,
-      affected_packages: data.affected_packages ||
-                       data.package_state?.map(pkg => pkg.package_name) ||
-                       ['RHEL'],
-      resource_url: data.resource_url ||
-                   `https://access.redhat.com/security/cve/CVE-${cveId.replace(/^CVE-/, '')}`,
-      details: data.details || [
-        `Security impact: ${data.threat_severity || data.severity || 'Unknown'}`,
-        data.bugzilla?.description || 'No additional details available.'
-      ]
+      affected_packages: data.affected_release?.map(r => r.product_name) || data.package_state?.map(p => p.package_name) || [],
+      resource_url: data.resource_url || data.bugzilla?.url || `https://access.redhat.com/security/cve/${cveId}`,
+      details: data.details || [data.bugzilla?.description || 'No additional details available.']
     };
   }
 

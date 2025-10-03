@@ -66,13 +66,12 @@ export async function GET(
       return NextResponse.json(data);
     }
 
-    // Read the most recent cache file
-    const latestFile = files.sort().pop();
-    if (!latestFile) {
-      throw new Error('No cache file found');
+    let allData: any[] = [];
+    for (const file of files) {
+      const fileData = JSON.parse(fs.readFileSync(path.join(databaseDir, file), 'utf-8'));
+      const dataArray = fileData.vulnerabilities || fileData.advisories || fileData.techniques || [];
+      allData.push(...dataArray);
     }
-
-    const cacheData = JSON.parse(fs.readFileSync(path.join(databaseDir, latestFile), 'utf-8'));
 
     if (query) {
       const searchableFields = {
@@ -83,16 +82,15 @@ export async function GET(
       };
 
       const fields = searchableFields[source as keyof SearchableFields] || ['id', 'description'];
-      const dataArray = cacheData.vulnerabilities || cacheData.advisories || cacheData.techniques || [];
-      const matches = searchInData(dataArray, query, fields);
+      const matches = searchInData(allData, query, fields);
 
       return NextResponse.json({
         data: matches,
-        timestamp: cacheData.timestamp || new Date().toISOString()
+        timestamp: new Date().toISOString()
       });
     }
 
-    return NextResponse.json(cacheData);
+    return NextResponse.json({ data: allData, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error(`Error in search API (${source}):`, error);
     return NextResponse.json({

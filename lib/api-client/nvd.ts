@@ -1,5 +1,11 @@
 import { API_CONFIG, RATE_LIMITS } from './config';
 
+interface NVDError {
+  message: string;
+  status: number;
+  isNotFound?: boolean;
+}
+
 export class NVDClient {
   private headers: HeadersInit;
   private delay: number;
@@ -30,12 +36,40 @@ export class NVDClient {
       await this.sleep(this.delay);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        const error: NVDError = {
+          message: errorData?.message || `CVE ${cveId} could not be retrieved`,
+          status: response.status,
+          isNotFound: response.status === 404
+        };
+
+        if (response.status === 404) {
+          console.log(`CVE ${cveId} not found in NVD database`);
+          error.message = `CVE ${cveId} not found in NVD database`;
+        }
+
+        throw error;
       }
 
-      return await response.json();
+      const data = await response.json();
+
+      // Validate the response structure
+      if (!data?.vulnerabilities?.[0]?.cve) {
+        throw {
+          message: `Invalid response format for CVE ${cveId}`,
+          status: 500
+        };
+      }
+
+      return data;
     } catch (error) {
-      console.error('Error fetching CVE:', error);
+      console.error('Error in NVD client:', error);
+      if (error instanceof Error) {
+        throw {
+          message: error.message,
+          status: (error as any).status || 500
+        };
+      }
       throw error;
     }
   }

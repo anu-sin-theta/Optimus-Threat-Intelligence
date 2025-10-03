@@ -42,23 +42,28 @@ export default function RedHatTab() {
 
   const fetchAdvisories = async (forceUpdate = false) => {
     try {
-      setLoading(true)
-      const url = forceUpdate ?
-        '/api/redhat?forceUpdate=true' :
-        '/api/redhat';
-      const response = await fetch(url)
-      const data = await response.json()
-      if (data.advisories) {
-        setAdvisories(data.advisories)
-        setTotalItems(data.advisories.length)
+      setLoading(true);
+      const nvdResponse = await fetch('/api/nvd?days=7&severity=CRITICAL,HIGH&limit=50');
+      const nvdData = await nvdResponse.json();
+      if (nvdData.vulnerabilities) {
+        const cveIds = nvdData.vulnerabilities.map(vuln => vuln.cve.id).join(',');
+        const url = forceUpdate ?
+          `/api/redhat?forceUpdate=true&cveIds=${cveIds}` :
+          `/api/redhat?cveIds=${cveIds}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.advisories) {
+          setAdvisories(data.advisories);
+          setTotalItems(data.advisories.length);
+        }
       }
     } catch (error) {
-      console.error("Error fetching advisories:", error)
+      console.error("Error fetching advisories:", error);
     } finally {
-      setLoading(false)
-      setUpdating(false)
+      setLoading(false);
+      setUpdating(false);
     }
-  }
+  };
 
   useEffect(() => {
     fetchAdvisories()
