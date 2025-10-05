@@ -170,7 +170,7 @@ export default function DashboardTab() {
           >
             <CardContent className="flex flex-col items-center justify-center h-full p-6 gap-4">
               <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                <Activity className="h-8 w-8 text-primary" />
+                                <Image src="/search.png" alt="Search" width={52} height={52} />
               </div>
               <div className="text-center">
                 <h3 className="font-semibold text-foreground mb-1">Quick Search</h3>
