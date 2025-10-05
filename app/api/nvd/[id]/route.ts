@@ -1,6 +1,47 @@
 import { NextResponse } from 'next/server';
 import { NVDClient } from '@/lib/api-client/nvd';
-import { DataCache } from '@/lib/data-cache';
+import { VulnersClient } from '@/lib/api-client/vulners';
+
+// Vulners as backup for CVE data
+const vulnersBackup = async (cveId: string) => {
+  if (!process.env.VULNERS_API_KEY) {
+    throw new Error('Vulners API key is not configured.');
+  }
+  const client = new VulnersClient(process.env.VULNERS_API_KEY);
+  const vulnersData = await client.getByIds([cveId]);
+
+  if (!vulnersData || vulnersData.length === 0) {
+    throw new Error('CVE not found in Vulners.');
+  }
+
+  // Transform Vulners data to NVD-like structure
+  const cve = vulnersData[0];
+  return {
+    vulnerabilities: [
+      {
+        cve: {
+          id: cve.id,
+          descriptions: [{ lang: 'en', value: cve.description }],
+          metrics: {
+            cvssMetricV31: [
+              {
+                cvssData: {
+                  baseScore: cve.cvss3?.score,
+                  baseSeverity: cve.cvss3?.severity,
+                  vectorString: cve.cvss3?.vector
+                }
+              }
+            ]
+          },
+          weaknesses: cve.cwe?.map((cweId: string) => ({ description: [{ lang: 'en', value: cweId }] })) || [],
+          published: cve.published,
+          lastModified: cve.modified,
+          references: cve.references?.map((ref: any) => ({ url: ref.href, source: ref.source })) || []
+        }
+      }
+    ]
+  };
+};
 
 export async function GET(
   request: Request,
@@ -10,29 +51,10 @@ export async function GET(
   const cveId = params.id;
 
   try {
-    // Check cache first
-    const cacheConfig = {
-      filename: `nvd-${cveId}.json`,
-      expiryHours: 24
-    };
-
-    // Try to get data from cache
-    const cachedData = await DataCache.getNVDData(cacheConfig);
-
-    // Validate cached data structure
-    if (cachedData?.vulnerabilities?.[0]?.cve) {
-      console.log(`Found valid cached data for ${cveId}`);
-      return NextResponse.json(cachedData);
-    }
-
-    // If not in cache or invalid cache, fetch from API
-    console.log(`Fetching fresh data for ${cveId}`);
     const client = new NVDClient(process.env.NVD_API_KEY);
     const response = await client.getCVE(cveId);
 
     if (response?.vulnerabilities?.[0]?.cve) {
-      // Save valid response to cache
-      await DataCache.saveNVDData(response, cacheConfig.filename);
       return NextResponse.json(response);
     }
 
@@ -41,23 +63,18 @@ export async function GET(
       { status: 404 }
     );
   } catch (error: any) {
-    console.error('Error in API route:', error);
-
-    // Handle 404 specifically
-    if (error.isNotFound || error.status === 404) {
+    console.warn(`NVD API failed for ${cveId}, attempting Vulners fallback.`);
+    try {
+      const vulnersData = await vulnersBackup(cveId);
+      return NextResponse.json(vulnersData);
+    } catch (vulnersError: any) {
       return NextResponse.json(
-        { error: `CVE ${cveId} not found in NVD database` },
+        {
+          error: `CVE ${cveId} not found in NVD or Vulners`,
+          details: vulnersError.message
+        },
         { status: 404 }
       );
     }
-
-    // Handle other errors
-    return NextResponse.json(
-      {
-        error: error.message || 'Failed to fetch CVE details',
-        details: error.status ? `Status: ${error.status}` : undefined
-      },
-      { status: error.status || 500 }
-    );
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { AbuseIPDBClient } from '@/lib/api-client/threat-intel';
+import { AbuseIPDBClient } from '@/lib/api-client/abuseIP';
 import { DataCache } from '@/lib/data-cache';
 
 export async function GET(request: Request) {

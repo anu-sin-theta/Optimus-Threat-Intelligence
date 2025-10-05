@@ -7,7 +7,7 @@ import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Search, RotateCw } from "lucide-react";
 
-const MaliciousIocsTab = () => {
+const MaliciousIpsTab = () => {
   const [ipAddress, setIpAddress] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -311,7 +311,7 @@ const MaliciousIocsTab = () => {
   )
 };
 
-export default MaliciousIocsTab;
+export default MaliciousIpsTab;
 
 
 

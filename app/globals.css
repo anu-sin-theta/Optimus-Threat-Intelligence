@@ -30,7 +30,7 @@
   --chart-4: #a5b4fc;
   --chart-5: #f43f5e;
   --radius: 0.5rem;
-  --sidebar: #1e3a8a;
+  --sidebar: var(--background);
   --sidebar-foreground: #f1f5f9;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
@@ -65,7 +65,7 @@
   --chart-3: #1e40af;
   --chart-4: #a5b4fc;
   --chart-5: #f43f5e;
-  --sidebar: #1e3a8a;
+  --sidebar: var(--background);
   --sidebar-foreground: #f1f5f9;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
@@ -123,4 +123,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.sidebar-gradient-border {
+  border-image-slice: 1;
+  border-image-source: linear-gradient(to bottom, #3b82f6, #8b5cf6);
 }

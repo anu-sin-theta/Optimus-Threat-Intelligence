@@ -2,7 +2,8 @@ import { NVDClient } from './nvd';
 import { CISAKEVClient } from './cisa';
 import { RedHatSecurityClient } from './redhat';
 import { VulnersClient } from './vulners';
-import { ThreatFoxClient, AbuseIPDBClient } from './threat-intel';
+import { ThreatFoxClient } from './threatfox';
+import { AbuseIPDBClient } from './abuseIP';
 import { DataCache } from '../data-cache';
 
 export class UnifiedIntelClient {
@@ -10,7 +11,7 @@ export class UnifiedIntelClient {
   private cisa: CISAKEVClient;
   private redhat: RedHatSecurityClient;
   private vulners: VulnersClient;
-  private threatfox: ThreatFoxClient;
+  private threatfox: ThreatFoxClient | undefined;
   private abuseipdb: AbuseIPDBClient;
 
   constructor(config: {
@@ -23,7 +24,9 @@ export class UnifiedIntelClient {
     this.cisa = new CISAKEVClient();
     this.redhat = new RedHatSecurityClient();
     this.vulners = new VulnersClient(config.vulnersApiKey);
-    this.threatfox = new ThreatFoxClient(config.threatfoxApiKey);
+    if (config.threatfoxApiKey) {
+      this.threatfox = new ThreatFoxClient(config.threatfoxApiKey);
+    }
     this.abuseipdb = new AbuseIPDBClient(config.abuseipdbApiKey);
   }
 
@@ -84,18 +87,23 @@ export class UnifiedIntelClient {
 
   async getRecentThreats(days: number = 7) {
     try {
-      const [recentCVEs, recentKEV, highSeverityCVEs, maliciousIPs] = await Promise.all([
+      const promises = [
         this.nvd.getRecentCVEs(days),
         this.cisa.getRecentKEVAdditions(days),
         this.vulners.getHighSeverityCVEs(days),
-        this.threatfox.getRecentMaliciousIPs()
-      ]);
+      ];
+
+      if (this.threatfox) {
+        promises.push(this.threatfox.getRecentIOCsDays());
+      }
+
+      const [recentCVEs, recentKEV, highSeverityCVEs, maliciousIPs] = await Promise.all(promises);
 
       return {
         cves: recentCVEs,
         kev: recentKEV,
         highSeverity: highSeverityCVEs,
-        maliciousIPs: maliciousIPs,
+        maliciousIPs: maliciousIPs || null,
         timestamp: new Date().toISOString()
       };
     } catch (error) {
@@ -106,14 +114,17 @@ export class UnifiedIntelClient {
 
   async checkIPReputation(ipAddress: string) {
     try {
-      const [abuseipdbData, threatfoxData] = await Promise.all([
-        this.abuseipdb.checkIP(ipAddress),
-        this.threatfox.searchIOC(ipAddress, 'ip')
-      ]);
+      const promises = [this.abuseipdb.checkIP(ipAddress)];
+
+      if (this.threatfox) {
+        promises.push(this.threatfox.searchIOC(ipAddress));
+      }
+
+      const [abuseipdbData, threatfoxData] = await Promise.all(promises);
 
       return {
         abuseipdb: abuseipdbData,
-        threatfox: threatfoxData,
+        threatfox: threatfoxData || null,
         timestamp: new Date().toISOString()
       };
     } catch (error) {

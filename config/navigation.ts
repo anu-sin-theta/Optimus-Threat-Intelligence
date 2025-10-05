@@ -51,9 +51,15 @@ export const navigationItems = [
   },
   {
     id: "iocs",
-    label: "Malicious IOCs",
+    label: "Bad IPs",
     description: "Indicators of Compromise",
     icon: Globe
+  },
+  {
+    id: "opti-abused",
+    label: "Opti Abused",
+    description: "ThreatFox IOCs",
+    icon: ShieldAlert
   },
   {
     id: "news",
