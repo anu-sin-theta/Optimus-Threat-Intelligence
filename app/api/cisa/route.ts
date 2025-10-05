@@ -35,11 +35,15 @@ export async function GET(request: Request) {
 
     if (!data || forceUpdate) {
       // Fetch fresh data
+      console.log('Fetching fresh KEV data...');
       const kevData = days ?
         await client.getRecentKEVAdditions(parseInt(days)) :
         await client.downloadKEVCatalog();
 
+      console.log('Raw KEV data:', kevData);
+
       if (!kevData?.vulnerabilities) {
+        console.error('No vulnerabilities found in KEV data');
         return NextResponse.json({ error: 'No KEV data found' }, { status: 404 });
       }
 

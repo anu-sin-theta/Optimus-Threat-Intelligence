@@ -32,10 +32,11 @@ export class CISAKEVClient {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
 
-      return kevData.vulnerabilities.filter((vuln: KEVEntry) => {
+      const recentVulnerabilities = kevData.vulnerabilities.filter((vuln: KEVEntry) => {
         const dateAdded = new Date(vuln.dateAdded);
         return dateAdded >= cutoffDate;
       });
+      return { vulnerabilities: recentVulnerabilities };
     } catch (error) {
       console.error('Error getting recent KEV additions:', error);
       throw error;

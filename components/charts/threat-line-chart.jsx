@@ -1,29 +1,19 @@
-"use client"
+'use client'
 
-import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 
-const data = [
-  { date: "Jan 1", cves: 45, exploits: 12 },
-  { date: "Jan 5", cves: 52, exploits: 18 },
-  { date: "Jan 10", cves: 48, exploits: 15 },
-  { date: "Jan 15", cves: 67, exploits: 24 },
-  { date: "Jan 20", cves: 71, exploits: 28 },
-  { date: "Jan 25", cves: 63, exploits: 22 },
-  { date: "Jan 30", cves: 78, exploits: 31 },
-]
-
-export function ThreatLineChart() {
+export function ThreatLineChart({ data }) {
   return (
     <ChartContainer
       config={{
         cves: {
-          label: "CVEs Discovered",
-          color: "hsl(var(--chart-1))",
+          label: 'CVEs Discovered',
+          color: 'yellow',
         },
         exploits: {
-          label: "Active Exploits",
-          color: "hsl(var(--chart-5))",
+          label: 'Active Exploits',
+          color: 'red',
         },
       }}
       className="h-[280px] w-full"
@@ -34,13 +24,13 @@ export function ThreatLineChart() {
           <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} width={40} />
           <ChartTooltip content={<ChartTooltipContent />} />
-          <Legend wrapperStyle={{ fontSize: "12px" }} />
+          <Legend wrapperStyle={{ fontSize: '12px' }} />
           <Line
             type="monotone"
             dataKey="cves"
             stroke="var(--color-cves)"
             strokeWidth={2}
-            dot={{ fill: "var(--color-cves)", r: 3 }}
+            dot={{ fill: 'var(--color-cves)', r: 3 }}
             name="CVEs Discovered"
           />
           <Line
@@ -48,7 +38,7 @@ export function ThreatLineChart() {
             dataKey="exploits"
             stroke="var(--color-exploits)"
             strokeWidth={2}
-            dot={{ fill: "var(--color-exploits)", r: 3 }}
+            dot={{ fill: 'var(--color-exploits)', r: 3 }}
             name="Active Exploits"
           />
         </LineChart>

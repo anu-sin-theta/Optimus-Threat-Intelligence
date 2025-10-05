@@ -78,7 +78,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center">
                 <Image
                     src="/footer-optimus.png"
-                    alt="Optimus by Ant"
+                    alt="Optimus by Anu"
                     width={240}
                     height={280}
                     className="w-full h-auto max-w-[200px] group-data-[collapsible=icon]:max-w-[48px]"

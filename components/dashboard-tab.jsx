@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThreatLineChart } from "@/components/charts/threat-line-chart"
 import { VulnerabilityBarChart } from "@/components/charts/vulnerability-bar-chart"
 import { AlertTriangle, Shield, Activity, Database, Globe, Target, AlertCircle } from "lucide-react"
+import Image from "next/image"
 import AnimatedSearchModal from "@/components/animated-search-modal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -25,24 +26,27 @@ export default function DashboardTab() {
     maliciousIPCount: 0,
     activeTechniques: 0,
   })
+  const [threatTrendsData, setThreatTrendsData] = useState([])
 
   useEffect(() => {
     const fetchAllIntelligence = async () => {
       try {
         setLoading(true)
 
-        const [nvdResponse, cisaResponse, ipsResponse, mitreResponse] = await Promise.all([
+        const [nvdResponse, cisaResponse, ipsResponse, mitreResponse, trendsResponse] = await Promise.all([
           fetch("/api/nvd?days=7&limit=100"),
           fetch("/api/cisa?days=7"),
           fetch("/api/abuseipdb/blacklist?limit=100"),
           fetch("/api/mitre"),
+          fetch("/api/threat-trends"),
         ])
 
-        const [nvd, cisa, ips, mitre] = await Promise.all([
+        const [nvd, cisa, ips, mitre, trends] = await Promise.all([
           nvdResponse.json(),
           cisaResponse.json(),
           ipsResponse.json(),
           mitreResponse.json(),
+          trendsResponse.json(),
         ])
 
         if (nvd?.vulnerabilities) {
@@ -67,6 +71,10 @@ export default function DashboardTab() {
           setMitreData({ techniques: mitre.techniques })
         }
 
+        if (trends) {
+          setThreatTrendsData(trends)
+        }
+
         setThreatStats({
           totalCVEs: nvd?.totalResults || 0,
           criticalCVEs: nvd?.stats?.CRITICAL || 0,
@@ -75,7 +83,7 @@ export default function DashboardTab() {
           activeTechniques: mitre?.techniques?.length || 0,
         })
       } catch (error) {
-        console.error("[v0] Error fetching dashboard intelligence:", error)
+        console.error("Error fetching dashboard intelligence:", error)
       } finally {
         setLoading(false)
       }
@@ -125,7 +133,7 @@ export default function DashboardTab() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Activity className="h-6 w-6 text-primary animate-pulse" />
-                  <h2 className="text-2xl font-bold text-foreground">Live Threat Intelligence</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Optimus Vulnerability Intelligence</h2>
                 </div>
                 <p className="text-muted-foreground">Real-time security intelligence aggregation</p>
                 <div className="flex gap-4 mt-4">
@@ -147,7 +155,7 @@ export default function DashboardTab() {
               </div>
               <div className="hidden lg:flex items-center gap-8">
                 <div className="text-center">
-                  <Shield className="h-16 w-16 text-primary mx-auto mb-2" />
+                                    <Image src="/optimus-shield.png" alt="Optimus Shield" width={64} height={64} className="mx-auto mb-2" />
                   <Badge variant="outline" className="bg-primary/20 text-primary border-primary">
                     {loading ? "Loading..." : "System Active"}
                   </Badge>
@@ -270,7 +278,7 @@ export default function DashboardTab() {
                   <CardDescription>CVE discoveries and exploit activity over time</CardDescription>
                 </CardHeader>
                 <CardContent className="pb-4">
-                  <ThreatLineChart />
+                  <ThreatLineChart data={threatTrendsData} />
                 </CardContent>
               </Card>
 
