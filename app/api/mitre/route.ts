@@ -63,6 +63,7 @@ async function fetchMitreData(): Promise<MitreTechnique[]> {
 
     return techniques;
   } catch (error) {
+
     console.error('Error fetching MITRE data:', error);
     throw error;
   }

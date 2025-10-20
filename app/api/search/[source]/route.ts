@@ -44,21 +44,32 @@ const searchInData = (data: any[], query: string, fields: string[]): any[] => {
 
 export async function GET(
   request: Request,
-  { params }: { params: { source: string } }
+  { params }: { params: Promise<{ source: string }> }
 ) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
   const forceUpdate = searchParams.get('forceUpdate') === 'true';
-  const source = params.source;
+  const { source } = await params;
 
   try {
+    if (source === 'threat') {
+        const baseUrl = request.nextUrl.clone().origin;
+        const response = await fetch(`${baseUrl}/api/enriched-vulnerabilities`);
+        const enrichedData = await response.json();
+        const results = enrichedData.vulnerabilities.filter(v => 
+            JSON.stringify(v).toLowerCase().includes(query.toLowerCase())
+        );
+        return NextResponse.json({ data: results, timestamp: new Date().toISOString() });
+    }
+
     const databaseDir = path.join(process.cwd(), 'database');
     const files = fs.readdirSync(databaseDir)
       .filter(file => file.startsWith(source) && file.endsWith('.json'));
 
-    if (files.length === 0) {
+    if (files.length === 0 && source !== 'ioc') {
       // If no cached files found, trigger a force update
-      const response = await fetch(`${request.headers.get('origin')}/api/${source}?forceUpdate=true`);
+      const baseUrl = request.nextUrl.clone().origin;
+      const response = await fetch(`${baseUrl}/api/${source}?forceUpdate=true`);
       if (!response.ok) {
         throw new Error(`Failed to fetch data from ${source} API`);
       }
@@ -69,7 +80,7 @@ export async function GET(
     let allData: any[] = [];
     for (const file of files) {
       const fileData = JSON.parse(fs.readFileSync(path.join(databaseDir, file), 'utf-8'));
-      const dataArray = fileData.vulnerabilities || fileData.advisories || fileData.techniques || [];
+      const dataArray = fileData.vulnerabilities || fileData.advisories || fileData.techniques || fileData.data || [];
       allData.push(...dataArray);
     }
 
@@ -78,7 +89,8 @@ export async function GET(
         nvd: ['cve.id', 'cve.descriptions', 'cve.configurations'],
         redhat: ['title', 'cve_id', 'affected_packages', 'details'],
         cisa: ['cveID', 'vulnerabilityName', 'vendorProject', 'product', 'shortDescription'],
-        mitre: ['id', 'name', 'tactic', 'description', 'platforms']
+        mitre: ['id', 'name', 'tactic', 'description', 'platforms'],
+        ioc: ['ioc', 'threat_type', 'malware_printable']
       };
 
       const fields = searchableFields[source as keyof SearchableFields] || ['id', 'description'];

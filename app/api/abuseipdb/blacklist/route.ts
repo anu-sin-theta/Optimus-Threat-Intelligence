@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   }
 
   const confidenceMinimum = searchParams.get('confidenceMinimum') || '90'; // Default to 90%
-  const limit = searchParams.get('limit') || '100'; // Default to 100 IPs
+  const limit = searchParams.get('limit') || '10000'; // Default to 10000 IPs
   const forceRefresh = searchParams.get('forceRefresh') === 'true';
 
   const cacheConfig = {

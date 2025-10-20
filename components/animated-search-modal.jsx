@@ -6,13 +6,16 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, Search, Upload, Paperclip } from "lucide-react"
+import { X, Search, Upload, Paperclip, Loader2 } from "lucide-react"
+import SearchResultItem from "./search-result-item"
 
 export default function AnimatedSearchModal({ isOpen, onClose }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchType, setSearchType] = useState("cve")
   const [showFileUpload, setShowFileUpload] = useState(false)
   const [uploadedFile, setUploadedFile] = useState(null)
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState(null);
 
   if (!isOpen) return null
 
@@ -22,13 +25,28 @@ export default function AnimatedSearchModal({ isOpen, onClose }) {
     }
   }
 
+  const handleSearch = async () => {
+    setIsSearching(true);
+    setSearchResults(null);
+    try {
+      const source = searchType === 'cve' ? 'nvd' : searchType;
+      const response = await fetch(`/api/search/${source}?query=${searchQuery}`);
+      const data = await response.json();
+      setSearchResults(data.data);
+    } catch (error) {
+      console.error("Error during search:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <Card
-        className="w-[90%] max-w-2xl h-[70vh] bg-card border-primary/50 shadow-2xl animate-in zoom-in-95 duration-300"
+        className="w-[90%] max-w-2xl h-[70vh] bg-card border-primary/50 shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <CardContent className="flex flex-col h-full p-6 relative">
@@ -49,7 +67,7 @@ export default function AnimatedSearchModal({ isOpen, onClose }) {
           </div>
 
           {/* Search Input */}
-          <div className="space-y-4 flex-1">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="search-input" className="text-foreground">
                 Search Query
@@ -59,7 +77,7 @@ export default function AnimatedSearchModal({ isOpen, onClose }) {
                 <Input
                   id="search-input"
                   type="text"
-                  placeholder="Enter CVE ID, device name, or threat indicator..."
+                  placeholder={searchType === 'cve' ? 'e.g., CVE-2021-44228' : searchType === 'ioc' ? 'e.g., 1.1.1.1 or example.com' : 'e.g., Log4j or APT29'}
                   className="pl-10 h-12 text-base bg-background"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -79,52 +97,30 @@ export default function AnimatedSearchModal({ isOpen, onClose }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cve">Search CVE</SelectItem>
-                  <SelectItem value="device">Search Device</SelectItem>
                   <SelectItem value="ioc">Search IOC</SelectItem>
                   <SelectItem value="threat">Search Threat</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            {/* File Upload Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-foreground">Attach Dependency File (Optional)</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFileUpload(!showFileUpload)}
-                  className="gap-2"
-                >
-                  <Paperclip className="h-4 w-4" />
-                  {showFileUpload ? "Hide" : "Attach"}
-                </Button>
+          {/* Search Results */}
+          <div className="flex-grow mt-6 overflow-y-auto">
+            {isSearching ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-
-              {showFileUpload && (
-                <div className="border-2 border-dashed border-border rounded-lg p-6 bg-secondary/20 animate-in slide-in-from-top-2 duration-200">
-                  <div className="flex flex-col items-center gap-3">
-                    <Upload className="h-10 w-10 text-muted-foreground" />
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-foreground mb-1">Upload project dependency file</p>
-                      <p className="text-xs text-muted-foreground">package.json, requirements.txt, pom.xml, etc.</p>
-                    </div>
-                    <Input
-                      type="file"
-                      onChange={handleFileChange}
-                      className="max-w-xs cursor-pointer"
-                      accept=".json,.txt,.xml,.lock,.yaml,.yml"
-                    />
-                    {uploadedFile && (
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <Paperclip className="h-4 w-4" />
-                        <span>{uploadedFile.name}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            ) : searchResults && (
+              <div className="space-y-4">
+                {searchResults.length > 0 ? (
+                  searchResults.map((result, index) => (
+                    <SearchResultItem key={index} result={result} />
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground">No results found.</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -132,8 +128,8 @@ export default function AnimatedSearchModal({ isOpen, onClose }) {
             <Button variant="outline" onClick={onClose} className="flex-1 bg-transparent">
               Cancel
             </Button>
-            <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={onClose}>
-              <Search className="h-4 w-4 mr-2" />
+            <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={handleSearch} disabled={isSearching}>
+              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
               Search
             </Button>
           </div>

@@ -34,9 +34,9 @@ export default function DashboardTab() {
         setLoading(true)
 
         const [nvdResponse, cisaResponse, ipsResponse, mitreResponse, trendsResponse] = await Promise.all([
-          fetch("/api/nvd?days=7&limit=100"),
+          fetch("/api/nvd?days=7"),
           fetch("/api/cisa?days=7"),
-          fetch("/api/abuseipdb/blacklist?limit=100"),
+          fetch("/api/abuseipdb/blacklist"),
           fetch("/api/mitre"),
           fetch("/api/threat-trends"),
         ])

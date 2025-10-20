@@ -117,7 +117,7 @@ export default function HomePage() {
                     <Input
                         type="search"
                         placeholder="Search threats, CVEs, IOCs..."
-                        className="w-64 pl-9 bg-background"
+                        className="w-64 pl-9 bg-background border-blue-500"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -197,7 +197,7 @@ export default function HomePage() {
                 </TabsContent>
 
                 <TabsContent value="opti-watcher" className="space-y-6">
-                  <OptiWatcherTab />
+                  <OptiWatcherTab searchQuery={searchQuery} />
                 </TabsContent>
 
                 <TabsContent value="automation" className="space-y-6">

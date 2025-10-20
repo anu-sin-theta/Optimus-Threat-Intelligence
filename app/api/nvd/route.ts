@@ -1,74 +1,49 @@
 import { NextResponse } from 'next/server';
 import { NVDClient } from '@/lib/api-client/nvd';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-// Define a simple in-memory cache for the fallback data
-let fallbackCache: any = null;
-let lastCacheTime: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-async function getFallbackCVEData() {
-  const now = Date.now();
-  if (fallbackCache && (now - lastCacheTime < CACHE_DURATION)) {
-    console.log('Using cached fallback data.');
-    return fallbackCache;
-  }
-
-  try {
-    console.log('Reading fallback data from file.');
-    const filePath = path.join(process.cwd(), 'database', 'nvd-recent-7days.json');
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const data = JSON.parse(fileContent);
-    
-    const stats = {
-      CRITICAL: 0,
-      HIGH: 0,
-      MEDIUM: 0,
-      LOW: 0,
-      UNKNOWN: 0,
-    };
-
-    data.vulnerabilities.forEach((vuln: any) => {
-      const cvssData = vuln.cve.metrics?.cvssMetricV31?.[0]?.cvssData ||
-                     vuln.cve.metrics?.cvssMetricV30?.[0]?.cvssData ||
-                     vuln.cve.metrics?.cvssMetricV2?.[0]?.cvssData;
-      const severity = cvssData?.baseSeverity || 'UNKNOWN';
-      if (stats.hasOwnProperty(severity)) {
-        (stats as any)[severity]++;
-      }
-    });
-
-    data.stats = stats;
-    fallbackCache = data;
-    lastCacheTime = now;
-
-    return data;
-  } catch (error) {
-    console.error('Failed to read or parse fallback data:', error);
-    throw new Error('Fallback data is unavailable.');
-  }
-}
+import { DataCache } from '@/lib/data-cache';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const days = searchParams.get('days');
-  const limit = parseInt(searchParams.get('limit') || '50');
+  const limit = parseInt(searchParams.get('limit') || '10000');
   const offset = parseInt(searchParams.get('offset') || '0');
+  const forceUpdate = searchParams.get('forceUpdate') === 'true';
 
   if (!days) {
     return NextResponse.json({ error: 'Missing required days parameter' }, { status: 400 });
   }
 
+  const cacheConfig = {
+    filename: `nvd-recent-${days}days.json`,
+    expiryHours: 1
+  };
+
+  if (!forceUpdate) {
+    const cachedData = await DataCache.getNVDData(cacheConfig);
+    if (cachedData) {
+      const paginatedData = cachedData.vulnerabilities.slice(offset, offset + limit);
+      return NextResponse.json({
+        vulnerabilities: paginatedData,
+        totalResults: cachedData.vulnerabilities.length,
+        stats: cachedData.stats,
+        source: 'cache'
+      });
+    }
+  }
+
   const nvdClient = new NVDClient(process.env.NVD_API_KEY);
 
   try {
-    const { vulnerabilities, totalResults, stats } = await nvdClient.getRecentCVEs(parseInt(days), limit, offset);
-    return NextResponse.json({ vulnerabilities, totalResults, stats, source: 'nvd_api' });
+    const { vulnerabilities, totalResults, stats } = await nvdClient.getRecentCVEs(parseInt(days), limit, 0);
+    const dataToCache = { vulnerabilities, totalResults, stats };
+    await DataCache.saveNVDData(dataToCache, cacheConfig.filename);
+    const paginatedData = vulnerabilities.slice(offset, offset + limit);
+
+    return NextResponse.json({ vulnerabilities: paginatedData, totalResults, stats, source: 'nvd_api' });
   } catch (error) {
     console.warn(`NVD API failed for recent CVEs, attempting file cache fallback.`);
     try {
-      const fallbackData = await getFallbackCVEData();
+      const fallbackData = await DataCache.getNVDData({ filename: 'nvd-recent-7days.json', expiryHours: 24 });
       const paginatedData = fallbackData.vulnerabilities.slice(offset, offset + limit);
 
       return NextResponse.json({

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -11,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 const ITEMS_PER_PAGE = 15;
 
-export default function OptiWatcherTab() {
+export default function OptiWatcherTab({ searchQuery }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_PAGE);
   const [selectedCve, setSelectedCve] = useState(null);
   const [graphData, setGraphData] = useState(null);
   const [isGraphLoading, setIsGraphLoading] = useState(false);
+  const [filteredVulnerabilities, setFilteredVulnerabilities] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,6 +28,7 @@ export default function OptiWatcherTab() {
         const response = await fetch("/api/enriched-vulnerabilities")
         const result = await response.json()
         setData(result)
+        setFilteredVulnerabilities(result.vulnerabilities);
       } catch (error) {
         console.error("Error fetching enriched vulnerabilities:", error)
       } finally {
@@ -35,6 +38,16 @@ export default function OptiWatcherTab() {
 
     fetchData()
   }, [])
+
+  useEffect(() => {
+    if (data) {
+      const filtered = data.vulnerabilities.filter(vuln => {
+        const searchableString = `${vuln.id} ${vuln.descriptions?.[0]?.value}`;
+        return searchableString.toLowerCase().includes(searchQuery.toLowerCase());
+      });
+      setFilteredVulnerabilities(filtered);
+    }
+  }, [searchQuery, data]);
 
   const handleLoadMore = () => {
     setItemsToShow(prev => prev + ITEMS_PER_PAGE);
@@ -75,8 +88,8 @@ export default function OptiWatcherTab() {
         ) : (
           <ScrollArea className="h-[calc(100vh-200px)]">
             <div className="space-y-4">
-              {data?.vulnerabilities?.slice(0, itemsToShow).map((vuln) => (
-                <Card key={vuln.id} className="bg-secondary/50 border-border">
+              {filteredVulnerabilities?.slice(0, itemsToShow).map((vuln) => (
+                <Card key={vuln.id} className="bg-secondary/50 border-border hover:bg-muted">
                   <CardHeader className="cursor-pointer" onClick={() => handleCveClick(vuln.id)}>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <span>{vuln.id}</span>
@@ -159,7 +172,7 @@ export default function OptiWatcherTab() {
                 </Card>
               ))}
             </div>
-            {data?.vulnerabilities?.length > itemsToShow && (
+            {filteredVulnerabilities?.length > itemsToShow && (
               <div className="flex justify-center mt-4">
                 <Button onClick={handleLoadMore}>Load More</Button>
               </div>
