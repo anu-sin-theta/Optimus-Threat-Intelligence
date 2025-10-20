@@ -9,7 +9,8 @@ import {
   Newspaper,
   ScrollText,
   FileSearch,
-  Settings
+  Settings,
+  Shield
 } from "lucide-react"
 
 export const navigationItems = [
@@ -67,6 +68,12 @@ export const navigationItems = [
     label: "Logs",
     description: "System and activity logs",
     icon: ScrollText
+  },
+  {
+    id: "opti-watcher",
+    label: "Opti Watcher",
+    description: "Enriched vulnerability intelligence",
+    icon: Shield
   },
 
 

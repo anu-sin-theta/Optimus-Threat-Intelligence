@@ -46,6 +46,7 @@ async function fetchMitreData(): Promise<MitreTechnique[]> {
         const tacticRefs = technique.kill_chain_phases?.map((phase: any) => phase.phase_name) || [];
         const tacticNames = [...new Set(tacticRefs.map((ref: string) => tactics.get(ref)).filter(Boolean))];
 
+        // @ts-ignore
         tacticNames.forEach((tacticName: string) => {
           techniques.push({
             id: `${technique.external_references?.[0]?.external_id}-${tacticName}`,

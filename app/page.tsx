@@ -21,6 +21,7 @@ import MitreAttackTab from "@/components/mitre-attack-tab"
 import AutomationTab from "@/components/automation-tab"
 import LogsTab from "@/components/logs-tab"
 import RedHatTab from "@/components/redhat-tab"
+import OptiWatcherTab from "@/components/opti-watcher-tab"
 
 
 import OptiAbusedTab from "@/components/opti-abused-tab"
@@ -193,6 +194,10 @@ export default function HomePage() {
 
                 <TabsContent value="opti-abused" className="space-y-6">
                   <OptiAbusedTab />
+                </TabsContent>
+
+                <TabsContent value="opti-watcher" className="space-y-6">
+                  <OptiWatcherTab />
                 </TabsContent>
 
                 <TabsContent value="automation" className="space-y-6">

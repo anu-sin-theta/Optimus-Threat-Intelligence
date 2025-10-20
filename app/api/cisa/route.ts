@@ -40,7 +40,7 @@ export async function GET(request: Request) {
         await client.getRecentKEVAdditions(parseInt(days)) :
         await client.downloadKEVCatalog();
 
-      console.log('Raw KEV data:', kevData);
+
 
       if (!kevData?.vulnerabilities) {
         console.error('No vulnerabilities found in KEV data');

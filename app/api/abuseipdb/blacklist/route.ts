@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   const cacheConfig = {
     filename: `abuseipdb-blacklist-${confidenceMinimum}-${limit}.json`,
-    expiryHours: 0.5 // 30 minutes
+    expiryHours: 1 // 1 hour
   };
 
   let data = null;
