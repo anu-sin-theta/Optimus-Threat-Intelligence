@@ -113,6 +113,16 @@ export default function VulnerabilitiesTab() {
             const vendor = vendorInfo.criteria?.split(':')[3] || 'Unknown';
             const product = vendorInfo.criteria?.split(':')[4] || 'Unknown';
 
+            const publishedDate = vuln.cve.published ? new Date(vuln.cve.published) : null;
+            const modifiedDate = vuln.cve.lastModified ? new Date(vuln.cve.lastModified) : null;
+            let isReattacked = false;
+            if (publishedDate && modifiedDate) {
+              const oneYear = 365 * 24 * 60 * 60 * 1000;
+              if (modifiedDate.getTime() - publishedDate.getTime() > oneYear) {
+                isReattacked = true;
+              }
+            }
+
             return {
               id: vuln.cve.id || `vuln-${index}`, // Ensure unique ID
               description,
@@ -121,8 +131,9 @@ export default function VulnerabilitiesTab() {
               vector: cvssData?.vectorString || '',
               vendor,
               product,
-              published: vuln.cve.published ? new Date(vuln.cve.published).toLocaleDateString() : 'Unknown',
-              modified: vuln.cve.lastModified ? new Date(vuln.cve.lastModified).toLocaleDateString() : 'Unknown',
+              published: publishedDate ? publishedDate.toLocaleDateString() : 'Unknown',
+              modified: modifiedDate ? modifiedDate.toLocaleDateString() : 'Unknown',
+              isReattacked,
               references: vuln.cve.references || [],
               metrics: vuln.cve.metrics || {},
               weaknesses: vuln.cve.weaknesses || [],

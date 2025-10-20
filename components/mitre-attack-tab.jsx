@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Filter, Download, RotateCw } from "lucide-react"
+import { Search, Filter, Download, RotateCw, BookOpen, Shield, Database, Link } from "lucide-react"
 import { intelligentSearch } from "@/lib/search"
 import { useDebounce } from "@/hooks/use-debounce"
 import {
@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
@@ -234,64 +235,100 @@ export default function MitreAttackTab() {
 
       {/* Details Modal */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95%] sm:max-w-[100rem] max-h-[90vh] overflow-y-auto p-8">
           {selectedTechnique && (
             <>
               <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <Badge className="mb-2">{selectedTechnique.tactic}</Badge>
-                  <span className="text-sm text-muted-foreground">{selectedTechnique.id}</span>
+                <div className="flex items-center justify-between mb-2 pr-10">
+                  <Badge variant="secondary" className="text-base">{selectedTechnique.tactic}</Badge>
+                  <span className="text-sm font-mono bg-muted text-muted-foreground px-2 py-1 rounded">
+                    {selectedTechnique.id.split('-')[0]}
+                  </span>
                 </div>
-                <DialogTitle>{selectedTechnique.name}</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-3xl font-bold text-foreground">{selectedTechnique.name}</DialogTitle>
+                <DialogDescription className="text-md text-muted-foreground pt-1">
                   MITRE ATT&CK® Technique Details
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Description</h3>
-                  <p className="text-muted-foreground">{selectedTechnique.description}</p>
-                </div>
-
-                {selectedTechnique.platforms && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Supported Platforms</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTechnique.platforms.map((platform) => (
-                        <Badge key={platform} variant="outline">
-                          {platform}
-                        </Badge>
-                      ))}
+              <Accordion type="multiple" defaultValue={['description', 'detection']} className="w-full space-y-2 pt-4">
+                <AccordionItem value="description">
+                  <AccordionTrigger className="text-lg font-semibold hover:no-underline bg-muted/50 px-4 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <span>Description</span>
                     </div>
-                  </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 px-4 text-base text-muted-foreground">
+                    <p className="whitespace-pre-wrap">{selectedTechnique.description}</p>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {selectedTechnique.detectionName && (
+                  <AccordionItem value="detection">
+                    <AccordionTrigger className="text-lg font-semibold hover:no-underline bg-muted/50 px-4 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-primary" />
+                        <span>Detection</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4 px-4 text-base text-muted-foreground">
+                       <p className="whitespace-pre-wrap">{selectedTechnique.detectionName}</p>
+                    </AccordionContent>
+                  </AccordionItem>
                 )}
 
-                {selectedTechnique.dataSources && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Data Sources</h3>
-                    <div className="space-y-2">
-                      {selectedTechnique.dataSources.map((source, idx) => (
-                        <div key={idx} className="text-muted-foreground">
-                          • {source}
+                <AccordionItem value="details">
+                  <AccordionTrigger className="text-lg font-semibold hover:no-underline bg-muted/50 px-4 rounded-md">
+                     <div className="flex items-center gap-2">
+                        <Database className="h-5 w-5 text-primary" />
+                        <span>Additional Details</span>
+                      </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {selectedTechnique.platforms && (
+                        <div>
+                          <h3 className="text-md font-semibold mb-3 text-foreground">Supported Platforms</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedTechnique.platforms.map((platform) => (
+                              <Badge key={platform} variant="outline" className="text-base">
+                                {platform}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      )}
 
-                <div className="pt-4">
-                  <Button asChild>
-                    <a
-                      href={`https://attack.mitre.org/techniques/${selectedTechnique.id}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gap-2"
-                    >
-                      View on MITRE ATT&CK
-                    </a>
-                  </Button>
-                </div>
+                      {selectedTechnique.dataSources && (
+                        <div>
+                          <h3 className="text-md font-semibold mb-3 text-foreground">Data Sources</h3>
+                          <ul className="list-disc list-inside space-y-1">
+                            {selectedTechnique.dataSources.map((source, idx) => (
+                              <li key={idx} className="text-muted-foreground">
+                                {source}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+
+              <div className="pt-6 flex justify-end">
+                <Button asChild variant="outline">
+                  <a
+                    href={`https://attack.mitre.org/techniques/${selectedTechnique.id.split('-')[0].replace('.', '/')}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="gap-2"
+                  >
+                    <Link className="h-4 w-4" />
+                    View on MITRE ATT&CK
+                  </a>
+                </Button>
               </div>
             </>
           )}

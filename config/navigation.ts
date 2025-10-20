@@ -43,12 +43,7 @@ export const navigationItems = [
     description: "Adversary tactics and techniques",
     icon: Target
   },
-  {
-    id: "vulners",
-    label: "Vulners",
-    description: "Vulnerability intelligence",
-    icon: FileWarning
-  },
+
   {
     id: "iocs",
     label: "Bad IPs",
@@ -73,16 +68,6 @@ export const navigationItems = [
     description: "System and activity logs",
     icon: ScrollText
   },
-  {
-    id: "results",
-    label: "Results",
-    description: "Search and analysis results",
-    icon: FileSearch
-  },
-  {
-    id: "automation",
-    label: "Automation & Settings",
-    description: "Configure system settings",
-    icon: Settings
-  }
+
+
 ]

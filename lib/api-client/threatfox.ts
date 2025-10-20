@@ -61,4 +61,8 @@ export class ThreatFoxClient {
   async getTagList(): Promise<ThreatFoxTagList> {
     return this.postRequest({ query: 'tag_list' });
   }
+
+  async getLabel(malware: string, platform?: string): Promise<any> {
+    return this.postRequest({ query: 'get_label', malware, platform });
+  }
 }

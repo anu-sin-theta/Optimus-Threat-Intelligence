@@ -30,6 +30,40 @@ export class NVDClient {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  private processCVEData(cve: any): any {
+    const descriptions = cve.descriptions?.filter((d: any) => d.lang === 'en');
+    const description = descriptions?.[0]?.value || 'No description available.';
+
+    const cvssMetricV31 = cve.metrics?.cvssMetricV31?.[0];
+    const cvssMetricV30 = cve.metrics?.cvssMetricV30?.[0];
+    const cvssMetricV2 = cve.metrics?.cvssMetricV2?.[0];
+
+    const severity = cvssMetricV31?.cvssData?.baseSeverity || cvssMetricV30?.cvssData?.baseSeverity || cvssMetricV2?.baseSeverity || 'UNKNOWN';
+    const score = cvssMetricV31?.cvssData?.baseScore || cvssMetricV30?.cvssData?.baseScore || cvssMetricV2?.baseScore || 0;
+    const vector = cvssMetricV31?.cvssData?.vectorString || cvssMetricV30?.cvssData?.vectorString || cvssMetricV2?.vectorString || 'N/A';
+
+    let vendor = 'N/A';
+    let product = 'N/A';
+
+    if (cve.configurations?.[0]?.nodes?.[0]?.cpeMatch?.[0]?.criteria) {
+      const cpe = cve.configurations[0].nodes[0].cpeMatch[0].criteria;
+      const parts = cpe.split(':');
+      if (parts.length >= 5) {
+        vendor = parts[3];
+        product = parts[4];
+      }
+    }
+
+    return {
+      description,
+      severity,
+      score,
+      vector,
+      vendor,
+      product,
+    };
+  }
+
   async getCVE(cveId: string) {
     const url = `${API_CONFIG.nvdBase}?cveId=${cveId}`;
     let attempt = 0;
@@ -77,6 +111,8 @@ export class NVDClient {
         status: 500
       };
     }
+
+    data.vulnerabilities[0].cve.processedData = this.processCVEData(data.vulnerabilities[0].cve);
 
     return data;
   }
@@ -155,10 +191,8 @@ export class NVDClient {
     };
 
     allCVEs.forEach((vuln: any) => {
-      const cvssData = vuln.cve.metrics?.cvssMetricV31?.[0]?.cvssData ||
-                     vuln.cve.metrics?.cvssMetricV30?.[0]?.cvssData ||
-                     vuln.cve.metrics?.cvssMetricV2?.[0]?.cvssData;
-      const severity = cvssData?.baseSeverity || 'UNKNOWN';
+      vuln.cve.processedData = this.processCVEData(vuln.cve);
+      const severity = vuln.cve.processedData.severity;
       if (stats.hasOwnProperty(severity)) {
         (stats as any)[severity]++;
       }

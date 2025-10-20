@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ThreatFoxClient } from '@/lib/api-client/threatfox';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const ioc = searchParams.get('ioc');
-
-  if (!ioc) {
-    return NextResponse.json({ error: 'IOC search term not provided' }, { status: 400 });
-  }
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const { days } = body;
 
   const apiKey = process.env.THREATFOX_API_KEY;
 
@@ -18,7 +14,7 @@ export async function GET(req: NextRequest) {
   const client = new ThreatFoxClient(apiKey);
 
   try {
-    const results = await client.searchIOC(ioc);
+    const results = await client.getRecentIOCsDays(days);
     return NextResponse.json(results);
   } catch (error) {
     if (error instanceof Error) {

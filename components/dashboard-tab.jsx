@@ -96,6 +96,7 @@ export default function DashboardTab() {
   }, [])
 
   const getTopCriticalCVEs = () => {
+    const kevSet = new Set(cisaData.vulnerabilities.map(v => v.cveID));
     return nvdData.vulnerabilities
         .filter((vuln) => {
           const severity =
@@ -112,6 +113,7 @@ export default function DashboardTab() {
               vuln.cve?.descriptions?.[0]?.value?.substring(0, 80) ||
               "No description",
           time: vuln.cve?.published ? new Date(vuln.cve.published).toLocaleString() : "Unknown",
+          isKev: kevSet.has(vuln.cve?.id),
         }))
   }
 
@@ -317,6 +319,12 @@ export default function DashboardTab() {
                                 <Badge variant="destructive" className="w-20 justify-center">
                                   {alert.severity}
                                 </Badge>
+                                {alert.isKev && (
+                                    <Badge variant="outline" className="border-destructive text-destructive">
+                                        <Shield className="h-3 w-3 mr-1" />
+                                        KEV
+                                    </Badge>
+                                )}
                                 <div>
                                   <p className="font-mono font-semibold text-foreground">{alert.id}</p>
                                   <p className="text-sm text-muted-foreground">{alert.title}...</p>

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ThreatFoxClient } from '@/lib/api-client/threatfox';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const ioc = searchParams.get('ioc');
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const { malware, platform } = body;
 
-  if (!ioc) {
-    return NextResponse.json({ error: 'IOC search term not provided' }, { status: 400 });
+  if (!malware) {
+    return NextResponse.json({ error: 'Malware not provided' }, { status: 400 });
   }
 
   const apiKey = process.env.THREATFOX_API_KEY;
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const client = new ThreatFoxClient(apiKey);
 
   try {
-    const results = await client.searchIOC(ioc);
+    const results = await client.getLabel(malware, platform);
     return NextResponse.json(results);
   } catch (error) {
     if (error instanceof Error) {

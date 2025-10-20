@@ -5,6 +5,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Bell, Settings } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 import DashboardTab from "@/components/dashboard-tab"
 import VulnerabilitiesTab from "@/components/vulnerabilities-tab"
@@ -15,8 +21,8 @@ import MitreAttackTab from "@/components/mitre-attack-tab"
 import AutomationTab from "@/components/automation-tab"
 import LogsTab from "@/components/logs-tab"
 import RedHatTab from "@/components/redhat-tab"
-import VulnersTab from "@/components/vulners-tab"
-import ResultsTab from "@/components/results-tab"
+
+
 import OptiAbusedTab from "@/components/opti-abused-tab"
 import { navigationItems } from "@/config/navigation"
 import {
@@ -118,9 +124,18 @@ export default function HomePage() {
                   <Button variant="ghost" size="icon">
                     <Bell className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon">
-                    <Settings className="h-5 w-5" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Settings className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setActiveTab("automation")}>
+                        Automation & Settings
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </header>
@@ -160,9 +175,7 @@ export default function HomePage() {
                   <MitreAttackTab />
                 </TabsContent>
 
-                <TabsContent value="vulners" className="space-y-6">
-                  <VulnersTab />
-                </TabsContent>
+                
 
                 <TabsContent value="iocs" className="space-y-6">
                   <MaliciousIpsTab />
@@ -176,9 +189,7 @@ export default function HomePage() {
                   <LogsTab />
                 </TabsContent>
 
-                <TabsContent value="results" className="space-y-6">
-                  <ResultsTab />
-                </TabsContent>
+                
 
                 <TabsContent value="opti-abused" className="space-y-6">
                   <OptiAbusedTab />

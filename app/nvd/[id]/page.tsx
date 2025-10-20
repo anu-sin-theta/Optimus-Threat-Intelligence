@@ -344,25 +344,25 @@ export default function VulnerabilityDetailsPage({ params }: PageProps) {
           <TabsList className="w-full justify-start bg-muted/50 p-0 h-12">
             <TabsTrigger
               value="overview"
-              className="data-[state=active]:bg-background rounded-none h-12"
+              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-none h-12"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="technical"
-              className="data-[state=active]:bg-background rounded-none h-12"
+              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-none h-12"
             >
               Technical Details
             </TabsTrigger>
             <TabsTrigger
               value="weaknesses"
-              className="data-[state=active]:bg-background rounded-none h-12"
+              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-none h-12"
             >
               Weaknesses
             </TabsTrigger>
             <TabsTrigger
               value="references"
-              className="data-[state=active]:bg-background rounded-none h-12"
+              className="data-[state=active]:bg-orange-500 data-[state=active]:text-white rounded-none h-12"
             >
               References
             </TabsTrigger>
