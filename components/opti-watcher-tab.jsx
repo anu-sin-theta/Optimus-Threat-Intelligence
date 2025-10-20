@@ -134,7 +134,7 @@ export default function OptiWatcherTab() {
                               </div>
                             </div>
                           )}
-                          <div className="relative pt-4">
+                          <div className="relative pt-4 h-[400px]">
                             <VulnerabilityGraph data={graphData} />
                             <Dialog>
                               <DialogTrigger asChild>
@@ -142,11 +142,13 @@ export default function OptiWatcherTab() {
                                   <Maximize className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent style={{ width: '1200px', height: '800px' }}>
-                                <DialogHeader>
+                              <DialogContent style={{ width: '1200px', height: '800px' }} className="flex flex-col">
+                                <DialogHeader className="p-6">
                                   <DialogTitle>Vulnerability Graph: {vuln.id}</DialogTitle>
                                 </DialogHeader>
-                                <VulnerabilityGraph data={graphData} />
+                                <div className="flex-grow">
+                                  <VulnerabilityGraph data={graphData} />
+                                </div>
                               </DialogContent>
                             </Dialog>
                           </div>
