@@ -4,25 +4,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to blue dark theme for Optimus platform */
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #3b82f6;
+  /* Updated to light whitish and blue theme for landing page */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #334155;
-  --secondary-foreground: #f1f5f9;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --muted: #cbd5e1;
+  --muted-foreground: #64748b;
   --accent: #3b82f6;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #334155;
-  --input: #1e293b;
+  --border: #e0e7ff;
+  --input: #f1f5f9;
   --ring: #3b82f6;
   --chart-1: #3b82f6;
   --chart-2: #60a5fa;
@@ -32,12 +32,12 @@
   --orange-500: #f97316;
   --radius: 0.5rem;
   --sidebar: var(--background);
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #3b82f6;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #1e40af;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #475569;
+  --sidebar-border: #e0e7ff;
   --sidebar-ring: #3b82f6;
 }
 
