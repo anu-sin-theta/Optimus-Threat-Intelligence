@@ -1,16 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Bell, Settings } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Search, Bell, Settings, LogOut } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 import DashboardTab from "@/components/dashboard-tab"
 import VulnerabilitiesTab from "@/components/vulnerabilities-tab"
@@ -22,8 +19,6 @@ import AutomationTab from "@/components/automation-tab"
 import LogsTab from "@/components/logs-tab"
 import RedHatTab from "@/components/redhat-tab"
 import OptiWatcherTab from "@/components/opti-watcher-tab"
-
-
 import OptiAbusedTab from "@/components/opti-abused-tab"
 import { navigationItems } from "@/config/navigation"
 import {
@@ -41,10 +36,46 @@ import {
   SidebarTrigger,
   SidebarFooter,
 } from "@/components/ui/sidebar"
+import { logout } from "@/hooks/use-auth"
+import { signOut } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchQuery, setSearchQuery] = useState("")
+  const { user, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/landing")
+    }
+  }, [user, loading, router])
+
+  if (loading) {
+    return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+      await logout()
+      router.push("/landing")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
 
   return (
       <SidebarProvider defaultOpen={true}>
@@ -135,6 +166,10 @@ export default function HomePage() {
                       <DropdownMenuItem onClick={() => setActiveTab("automation")}>
                         Automation & Settings
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -176,8 +211,6 @@ export default function HomePage() {
                   <MitreAttackTab />
                 </TabsContent>
 
-                
-
                 <TabsContent value="iocs" className="space-y-6">
                   <MaliciousIpsTab />
                 </TabsContent>
@@ -189,8 +222,6 @@ export default function HomePage() {
                 <TabsContent value="logs" className="space-y-6">
                   <LogsTab />
                 </TabsContent>
-
-                
 
                 <TabsContent value="opti-abused" className="space-y-6">
                   <OptiAbusedTab />

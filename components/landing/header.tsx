@@ -32,10 +32,12 @@ export default function LandingHeader() {
 
                     {/* CTA Buttons */}
                     <div className="flex items-center gap-3">
-                        <Button variant="ghost" className="text-slate-600 hover:text-blue-600">
-                            Sign In
-                        </Button>
-                        <Link href="/app">
+                        <Link href="/login">
+                            <Button variant="ghost" className="text-slate-600 hover:text-blue-600">
+                                Login
+                            </Button>
+                        </Link>
+                        <Link href="/panel">
                             <Button className="bg-blue-600 hover:bg-blue-700 text-white">Get Started</Button>
                         </Link>
                     </div>

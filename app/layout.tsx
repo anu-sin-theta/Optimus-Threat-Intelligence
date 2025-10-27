@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/components/auth-provider';
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
@@ -19,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        {children}
-        <Footer />
-        <Analytics />
+        <AuthProvider>
+          {children}
+          <Footer />
+          <Analytics />
+        </AuthProvider>
       </body>
     </html>
   )
