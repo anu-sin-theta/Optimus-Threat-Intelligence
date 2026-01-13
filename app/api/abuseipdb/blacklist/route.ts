@@ -10,12 +10,12 @@ export async function GET(request: Request) {
   }
 
   const confidenceMinimum = searchParams.get('confidenceMinimum') || '90'; // Default to 90%
-  const limit = searchParams.get('limit') || '10000'; // Default to 10000 IPs
+  const limit = searchParams.get('limit') || '1000000'; // Default to 1,000,000 IPs
   const forceRefresh = searchParams.get('forceRefresh') === 'true';
 
   const cacheConfig = {
     filename: `abuseipdb-blacklist-${confidenceMinimum}-${limit}.json`,
-    expiryHours: 1 // 1 hour
+    expiryHours: 24 // 24 hours
   };
 
   let data = null;

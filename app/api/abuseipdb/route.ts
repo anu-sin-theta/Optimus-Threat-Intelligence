@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { AbuseIPDBClient } from '@/lib/api-client/abuseIP';
 import { DataCache } from '@/lib/data-cache';
+import { RateLimiter } from '@/lib/rate-limiter';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -16,17 +17,20 @@ export async function GET(request: Request) {
 
   try {
     if (networkCIDR) {
-      // Check cache for network data
       const cacheConfig = {
         filename: `abuseipdb-network-${networkCIDR.replace('/', '-')}.json`,
-        expiryHours: 1
+        expiryHours: 24
       };
 
       let data = await DataCache.getNVDData(cacheConfig);
 
       if (!data) {
+        if (!(await RateLimiter.isAllowed('abuseipdb'))) {
+          return NextResponse.json({ error: 'AbuseIPDB API rate limit exceeded' }, { status: 429 });
+        }
         data = await client.checkIPBlock(networkCIDR, maxAge ? parseInt(maxAge) : 90);
         await DataCache.saveNVDData(data, cacheConfig.filename);
+        await RateLimiter.increment('abuseipdb');
       }
 
       return NextResponse.json(data);
@@ -36,17 +40,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'IP address is required' }, { status: 400 });
     }
 
-    // Check cache for IP data
     const cacheConfig = {
       filename: `abuseipdb-ip-${ip}.json`,
-      expiryHours: 1
+      expiryHours: 24
     };
 
     let data = await DataCache.getNVDData(cacheConfig);
 
     if (!data) {
+      if (!(await RateLimiter.isAllowed('abuseipdb'))) {
+        return NextResponse.json({ error: 'AbuseIPDB API rate limit exceeded' }, { status: 429 });
+      }
       data = await client.checkIP(ip, maxAge ? parseInt(maxAge) : 90);
       await DataCache.saveNVDData(data, cacheConfig.filename);
+      await RateLimiter.increment('abuseipdb');
     }
 
     return NextResponse.json(data);

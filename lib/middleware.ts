@@ -4,7 +4,7 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
     // Public routes that don't require authentication
-    const publicRoutes = ["/landing", "/login", "/api"]
+    const publicRoutes = ["/landing", "/login", "/api", "/"]
 
     // If user is trying to access a protected route without auth, redirect to landing
     if (!publicRoutes.some((route) => pathname.startsWith(route)) && pathname !== "/") {

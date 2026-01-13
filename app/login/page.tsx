@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/lib/hooks/use-auth"
+import { useAuth } from "@/hooks/use-auth"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 import Link from "next/link"
