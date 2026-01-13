@@ -24,22 +24,22 @@
 
 <div align="center">
 
-### Main Dashboard
+### Home Sweet Home - [Project also has Dedicated CVE, CISA KEV, IP Abuse tabs]
 <img src="./public/Opera Snapshot_2026-01-13_114304_localhost.png" alt="Main Dashboard" width="800"/>
 
-### Vulnerability Analysis
+### Vulnerability Dashboard
 <img src="./public/Opera Snapshot_2026-01-13_115310_localhost.png" alt="Vulnerability Analysis" width="800"/>
 
 ### Threat Intelligence View
 <img src="./public/Opera Snapshot_2026-01-13_115335_localhost.png" alt="Threat Intelligence" width="800"/>
 
-### CVE Details
+### Malware & IoC Details
 <img src="./public/Opera Snapshot_2026-01-13_115416_localhost.png" alt="CVE Details" width="800"/>
 
-### Search & Filtering
+### Enriched [CWE, CVE, KEV, MITRE, CPE] Visualization
 <img src="./public/Opera Snapshot_2026-01-13_115542_localhost.png" alt="Search Interface" width="800"/>
 
-### Analytics Dashboard
+### Landing Page
 <img src="./public/Opera Snapshot_2026-01-13_115635_localhost.png" alt="Analytics Dashboard" width="800"/>
 
 </div>
